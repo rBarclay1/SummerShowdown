@@ -1,0 +1,12 @@
+- admin control only admin should control leaderboards
+- admin view/ user view
+- comments on others posts
+- push/email notif when passes on board
+- athlete profiles
+- graphs on each profile of progress by lift
+- graphs on each leaderboard showing progress per athlete
+- leaderboards right now have multiple lifts, each leaderboard should be a single one
+- too many people on fire right now not sure why
+- a way to put in baseline beginning of summer bench mark
+
+- downloadable mobile app for ease of use dosent have to be in appstore
