@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Athlete {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  entries   PREntry[]
+  createdAt DateTime  @default(now())
+}
+
+model Lift {
+  id               Int               @id @default(autoincrement())
+  name             String            @unique
+  entries          PREntry[]
+  leaderboardLifts LeaderboardLift[]
+  mainForBoards    Leaderboard[]     @relation("MainLift")
+  createdAt        DateTime          @default(now())
+}
+
+model Leaderboard {
+  id               Int               @id @default(autoincrement())
+  name             String            @unique
+  mainLiftId       Int
+  mainLift         Lift              @relation("MainLift", fields: [mainLiftId], references: [id])
+  leaderboardLifts LeaderboardLift[]
+  entries          PREntry[]
+  createdAt        DateTime          @default(now())
+}
+
+model LeaderboardLift {
+  leaderboardId Int
+  liftId        Int
+  leaderboard   Leaderboard @relation(fields: [leaderboardId], references: [id], onDelete: Cascade)
+  lift          Lift        @relation(fields: [liftId], references: [id])
+
+  @@id([leaderboardId, liftId])
+}
+
+model PREntry {
+  id            Int         @id @default(autoincrement())
+  athleteId     Int
+  liftId        Int
+  leaderboardId Int
+  weightLbs     Float
+  date          DateTime    @default(now())
+  athlete       Athlete     @relation(fields: [athleteId], references: [id])
+  lift          Lift        @relation(fields: [liftId], references: [id])
+  leaderboard   Leaderboard @relation(fields: [leaderboardId], references: [id])
+  createdAt     DateTime    @default(now())
+}
