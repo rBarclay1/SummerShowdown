@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import PRForm from "@/components/PRForm"
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
+import { currentUser } from "@clerk/nextjs/server"
 
 export const dynamic = "force-dynamic"
 
@@ -12,18 +13,25 @@ export default async function LogPage({
 }) {
   const { leaderboard: defaultLb } = await searchParams
 
-  const [leaderboards, athletes] = await Promise.all([
+  const [leaderboards, clerkUser] = await Promise.all([
     prisma.leaderboard.findMany({
-      include: { leaderboardLifts: { include: { lift: true } } },
+      include: { mainLift: true },
       orderBy: { name: "asc" },
     }),
-    prisma.athlete.findMany({ orderBy: { name: "asc" } }),
+    currentUser(),
   ])
+
+  const athleteName =
+    [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(" ").trim() ||
+    clerkUser?.username ||
+    ""
 
   const formLeaderboards = leaderboards.map((lb) => ({
     id: lb.id,
     name: lb.name,
-    lifts: lb.leaderboardLifts.map((ll) => ll.lift),
+    liftId: lb.mainLiftId,
+    liftName: lb.mainLift.name,
+    isTotalLoad: lb.mainLift.isTotalLoad,
   }))
 
   const defaultLeaderboardId = defaultLb ? parseInt(defaultLb) : undefined
@@ -47,12 +55,12 @@ export default async function LogPage({
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">Log a PR</h1>
         <p className="text-muted-foreground mt-1">
-          First entry sets the baseline. Every entry after updates the current PR.
+          First entry sets the baseline. Every entry after updates your current PR.
         </p>
       </div>
       <PRForm
         leaderboards={formLeaderboards}
-        athletes={athletes}
+        athleteName={athleteName}
         defaultLeaderboardId={defaultLeaderboardId}
       />
     </main>

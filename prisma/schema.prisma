@@ -8,38 +8,34 @@ datasource db {
 }
 
 model Athlete {
-  id        Int       @id @default(autoincrement())
-  name      String    @unique
-  entries   PREntry[]
-  createdAt DateTime  @default(now())
+  id                Int                      @id @default(autoincrement())
+  name              String                   @unique
+  clerkId           String?                  @unique
+  entries           PREntry[]
+  posts             Post[]
+  comments          Comment[]
+  pushSubscriptions PushSubscription[]
+  notificationPrefs NotificationPreferences?
+  createdAt         DateTime                 @default(now())
 }
 
 model Lift {
-  id               Int               @id @default(autoincrement())
-  name             String            @unique
-  entries          PREntry[]
-  leaderboardLifts LeaderboardLift[]
-  mainForBoards    Leaderboard[]     @relation("MainLift")
-  createdAt        DateTime          @default(now())
+  id           Int           @id @default(autoincrement())
+  name         String        @unique
+  isTotalLoad  Boolean       @default(false)
+  entries      PREntry[]
+  leaderboards Leaderboard[] @relation("BoardLift")
+  createdAt    DateTime      @default(now())
 }
 
 model Leaderboard {
-  id               Int               @id @default(autoincrement())
-  name             String            @unique
-  mainLiftId       Int
-  mainLift         Lift              @relation("MainLift", fields: [mainLiftId], references: [id])
-  leaderboardLifts LeaderboardLift[]
-  entries          PREntry[]
-  createdAt        DateTime          @default(now())
-}
-
-model LeaderboardLift {
-  leaderboardId Int
-  liftId        Int
-  leaderboard   Leaderboard @relation(fields: [leaderboardId], references: [id], onDelete: Cascade)
-  lift          Lift        @relation(fields: [liftId], references: [id])
-
-  @@id([leaderboardId, liftId])
+  id         Int       @id @default(autoincrement())
+  name       String    @unique
+  mainLiftId Int
+  endDate    DateTime?
+  mainLift   Lift      @relation("BoardLift", fields: [mainLiftId], references: [id])
+  entries    PREntry[]
+  createdAt  DateTime  @default(now())
 }
 
 model PREntry {
@@ -53,4 +49,45 @@ model PREntry {
   lift          Lift        @relation(fields: [liftId], references: [id])
   leaderboard   Leaderboard @relation(fields: [leaderboardId], references: [id])
   createdAt     DateTime    @default(now())
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  authorId  Int
+  author    Athlete   @relation(fields: [authorId], references: [id])
+  content   String
+  imageData String?
+  comments  Comment[]
+  createdAt DateTime  @default(now())
+}
+
+model Comment {
+  id          Int      @id @default(autoincrement())
+  postId      Int
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId    Int
+  author      Athlete  @relation(fields: [authorId], references: [id])
+  content     String
+  authorToken String
+  createdAt   DateTime @default(now())
+}
+
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  athleteId Int
+  athlete   Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+}
+
+model NotificationPreferences {
+  id           Int      @id @default(autoincrement())
+  athleteId    Int      @unique
+  athlete      Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  emailEnabled Boolean  @default(true)
+  pushEnabled  Boolean  @default(true)
+  email        String?
+  createdAt    DateTime @default(now())
 }

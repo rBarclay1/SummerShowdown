@@ -3,57 +3,54 @@
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { isAdmin } from "@/lib/admin"
 
-export async function createLeaderboard(formData: FormData) {
-  const name = (formData.get("name") as string).trim()
-  const mainLiftId = parseInt(formData.get("mainLiftId") as string)
-  const liftIds = formData
-    .getAll("liftIds")
-    .map((v) => parseInt(v as string))
-    .filter(Boolean)
-  const newLiftNames = formData
-    .getAll("newLifts")
-    .map((v) => (v as string).trim())
-    .filter(Boolean)
+export type CreateLeaderboardResult =
+  | { success: true }
+  | { success: false; error: string }
 
-  if (!name || isNaN(mainLiftId) || liftIds.length === 0) {
-    throw new Error("Invalid form data")
+export async function createLeaderboard(formData: FormData): Promise<CreateLeaderboardResult> {
+  if (!(await isAdmin())) return { success: false, error: "Forbidden" }
+
+  const endDateStr = formData.get("endDate") as string | null
+  const endDate = endDateStr ? new Date(endDateStr) : null
+
+  const existingLiftId = formData.get("liftId") as string | null
+  const newLiftName = (formData.get("newLiftName") as string | null)?.trim()
+
+  if (!existingLiftId && !newLiftName) return { success: false, error: "A lift is required." }
+
+  let liftId: number
+  let liftName: string
+
+  if (existingLiftId) {
+    liftId = parseInt(existingLiftId)
+    const lift = await prisma.lift.findUnique({ where: { id: liftId } })
+    if (!lift) return { success: false, error: "Lift not found." }
+    liftName = lift.name
+  } else {
+    const lift = await prisma.lift.upsert({
+      where: { name: newLiftName! },
+      update: {},
+      create: { name: newLiftName! },
+    })
+    liftId = lift.id
+    liftName = lift.name
   }
 
-  // Create any new lifts
-  const createdLifts = await Promise.all(
-    newLiftNames.map((liftName) =>
-      prisma.lift.upsert({
-        where: { name: liftName },
-        update: {},
-        create: { name: liftName },
-      })
-    )
-  )
-
-  const allLiftIds = [...liftIds, ...createdLifts.map((l) => l.id)]
-  const resolvedMainLiftId = mainLiftId < 0
-    ? createdLifts[Math.abs(mainLiftId) - 1]?.id ?? allLiftIds[0]
-    : mainLiftId
+  // Prevent duplicate: one leaderboard per lift
+  const existing = await prisma.leaderboard.findFirst({ where: { mainLiftId: liftId } })
+  if (existing) {
+    return {
+      success: false,
+      error: `A leaderboard for ${liftName} already exists.`,
+    }
+  }
 
   const leaderboard = await prisma.leaderboard.create({
-    data: {
-      name,
-      mainLiftId: resolvedMainLiftId,
-      leaderboardLifts: {
-        create: allLiftIds.map((liftId) => ({ liftId })),
-      },
-    },
+    data: { name: liftName, mainLiftId: liftId, ...(endDate ? { endDate } : {}) },
   })
 
   revalidatePath("/")
   redirect(`/leaderboard/${leaderboard.id}`)
-}
-
-export async function createLift(name: string) {
-  return prisma.lift.upsert({
-    where: { name: name.trim() },
-    update: {},
-    create: { name: name.trim() },
-  })
 }

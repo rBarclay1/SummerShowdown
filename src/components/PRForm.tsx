@@ -4,32 +4,29 @@ import { useState, useTransition, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 import { logPR } from "@/app/log/actions"
 
 type Leaderboard = {
   id: number
   name: string
-  lifts: { id: number; name: string }[]
+  liftId: number
+  liftName: string
+  isTotalLoad: boolean
 }
-
-type Athlete = { id: number; name: string }
 
 export default function PRForm({
   leaderboards,
-  athletes,
+  athleteName,
   defaultLeaderboardId,
 }: {
   leaderboards: Leaderboard[]
-  athletes: Athlete[]
+  athleteName: string
   defaultLeaderboardId?: number
 }) {
   const [leaderboardId, setLeaderboardId] = useState<string>(
     defaultLeaderboardId?.toString() ?? ""
   )
-  const [liftId, setLiftId] = useState<string>("")
-  const [athleteName, setAthleteName] = useState("")
   const [weight, setWeight] = useState("")
   const [unit, setUnit] = useState<"lbs" | "kg">("lbs")
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
@@ -42,26 +39,15 @@ export default function PRForm({
 
   const selectedLeaderboard = leaderboards.find((l) => l.id.toString() === leaderboardId)
 
-  // Reset lift when leaderboard changes
-  useEffect(() => { setLiftId("") }, [leaderboardId])
-
-  const athleteSuggestions = athletes
-    .filter(
-      (a) =>
-        athleteName.length > 0 &&
-        a.name.toLowerCase().includes(athleteName.toLowerCase()) &&
-        a.name.toLowerCase() !== athleteName.toLowerCase()
-    )
-    .slice(0, 5)
+  useEffect(() => { setResult(null) }, [leaderboardId])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setResult(null)
 
     const fd = new FormData()
-    fd.append("athleteName", athleteName)
     fd.append("leaderboardId", leaderboardId)
-    fd.append("liftId", liftId)
+    fd.append("liftId", selectedLeaderboard!.liftId.toString())
     fd.append("weight", weight)
     fd.append("unit", unit)
     fd.append("date", date)
@@ -77,7 +63,7 @@ export default function PRForm({
           type: "success",
           message: res.isBaseline
             ? `Baseline set! ${displayWeight} logged as starting point.`
-            : `PR logged! ${displayWeight} — baseline updated.`,
+            : `PR logged! ${displayWeight}`,
         })
         setWeight("")
       } else {
@@ -88,81 +74,46 @@ export default function PRForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {/* Athlete */}
-      <div className="space-y-2 relative">
-        <Label htmlFor="athleteName">Athlete Name</Label>
-        <Input
-          id="athleteName"
-          placeholder="Enter name or pick existing…"
-          value={athleteName}
-          onChange={(e) => setAthleteName(e.target.value)}
-          autoComplete="off"
-          disabled={isPending}
-        />
-        {athleteSuggestions.length > 0 && (
-          <ul className="absolute z-10 bg-background border rounded-md shadow-md w-full mt-1 overflow-hidden">
-            {athleteSuggestions.map((a) => (
-              <li
-                key={a.id}
-                className="px-3 py-2 text-sm hover:bg-muted cursor-pointer"
-                onClick={() => setAthleteName(a.name)}
-              >
-                {a.name}
-              </li>
-            ))}
-          </ul>
-        )}
+      {/* Logged-in user display */}
+      <div className="rounded-md bg-muted/40 border px-4 py-3 text-sm">
+        Logging as <span className="font-semibold">{athleteName}</span>
       </div>
 
-      {/* Leaderboard */}
+      {/* Leaderboard picker */}
       <div className="space-y-2">
         <Label>Leaderboard</Label>
-        <Select
-          value={leaderboardId}
-          onValueChange={(v) => setLeaderboardId(v ?? "")}
-          disabled={isPending}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select a leaderboard…" />
-          </SelectTrigger>
-          <SelectContent>
-            {leaderboards.map((lb) => (
-              <SelectItem key={lb.id} value={lb.id.toString()}>
-                {lb.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Lift */}
-      <div className="space-y-2">
-        <Label>Lift</Label>
-        <Select
-          value={liftId}
-          onValueChange={(v) => setLiftId(v ?? "")}
-          disabled={isPending || !selectedLeaderboard}
-        >
-          <SelectTrigger>
-            <SelectValue
-              placeholder={
-                selectedLeaderboard ? "Select a lift…" : "Choose a leaderboard first"
-              }
-            />
-          </SelectTrigger>
-          <SelectContent>
-            {(selectedLeaderboard?.lifts ?? []).map((lift) => (
-              <SelectItem key={lift.id} value={lift.id.toString()}>
-                {lift.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col gap-2">
+          {leaderboards.map((lb) => {
+            const isSelected = leaderboardId === lb.id.toString()
+            return (
+              <button
+                key={lb.id}
+                type="button"
+                disabled={isPending}
+                onClick={() => setLeaderboardId(lb.id.toString())}
+                className={cn(
+                  "w-full flex items-center justify-between gap-4 px-4 min-h-[48px] rounded-lg border text-left transition-colors",
+                  isSelected
+                    ? "border-amber-400 bg-amber-500/10"
+                    : "border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20"
+                )}
+              >
+                <span className={cn("font-medium text-sm", isSelected ? "text-white" : "text-foreground")}>
+                  {lb.liftName}
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Weight + unit toggle */}
       <div className="space-y-2">
-        <Label htmlFor="weight">Weight</Label>
+        <Label htmlFor="weight">
+          {selectedLeaderboard?.isTotalLoad
+            ? "Total Load (bodyweight + added weight)"
+            : "Weight"}
+        </Label>
         <div className="flex gap-2">
           <Input
             id="weight"
@@ -181,7 +132,7 @@ export default function PRForm({
                 key={u}
                 type="button"
                 onClick={() => setUnit(u)}
-                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                className={`px-4 min-h-[44px] text-sm font-medium transition-colors ${
                   unit === u ? "bg-primary text-primary-foreground" : "hover:bg-muted"
                 }`}
               >
@@ -190,6 +141,11 @@ export default function PRForm({
             ))}
           </div>
         </div>
+        {selectedLeaderboard?.isTotalLoad && (
+          <p className="text-xs text-muted-foreground">
+            Add your bodyweight and any added weight together. E.g. if you weigh 185 lbs and added 50 lbs, log 235 lbs.
+          </p>
+        )}
       </div>
 
       {/* Date */}
@@ -207,11 +163,12 @@ export default function PRForm({
       {/* Feedback */}
       {result && (
         <div
-          className={`text-sm px-4 py-3 rounded-md ${
+          className={cn(
+            "text-sm px-4 py-3 rounded-md border",
             result.type === "success"
-              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-              : "bg-destructive/10 text-destructive border border-destructive/20"
-          }`}
+              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+              : "bg-destructive/10 text-destructive border-destructive/20"
+          )}
         >
           {result.message}
         </div>
@@ -219,7 +176,7 @@ export default function PRForm({
 
       <Button
         type="submit"
-        disabled={isPending || !athleteName || !leaderboardId || !liftId || !weight}
+        disabled={isPending || !leaderboardId || !weight}
         className="w-full"
       >
         {isPending ? "Logging…" : "Log PR"}

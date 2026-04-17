@@ -1,12 +1,24 @@
-- admin control only admin should control leaderboards
-- admin view/ user view
-- comments on others posts
-- push/email notif when passes on board
-- athlete profiles
-- graphs on each profile of progress by lift
-- graphs on each leaderboard showing progress per athlete
-- leaderboards right now have multiple lifts, each leaderboard should be a single one
-- too many people on fire right now not sure why
-- a way to put in baseline beginning of summer bench mark
+1. Bottom tab bar on mobile The hamburger menu is fine but a bottom tab bar is much easier to reach with one thumb.
 
-- downloadable mobile app for ease of use dosent have to be in appstore
+Replace the top hamburger menu on mobile with a fixed bottom tab bar containing icons and labels for: Leaderboards, Log PR, Community, and Notifications. The top nav bar on mobile should show only the app name and a profile avatar. Keep the full top nav on desktop unchanged.
+
+2. Leaderboard cards need more breathing room on mobile The cards stack fine but feel cramped with small text and tight padding.
+
+On mobile, increase leaderboard card padding to 20px, increase athlete name font size to 15px, and increase the percentage gain font size to 15px. Make the View Full and Log PR buttons full width and stacked vertically on screens under 430px instead of side by side.
+
+3. Weekly winner banner is too plain It's easy to scroll past. Could be more of a moment.
+
+Redesign the weekly winner banner to be more visually distinct — add a subtle gold/amber left border accent, make the athlete name larger and bolder, and show their profile photo or initials avatar next to the trophy icon. Keep the overall height similar.
+
+4. Overall Rankings and Most Improved tables are hard to read on mobile Two side-by-side tables collapse awkwardly on small screens.
+
+On mobile, stack the Overall Rankings and Most Improved This Month tables vertically instead of side by side. Add a section header with a thin divider above each. Ensure the Avg Gain and 30-Day Gain columns don't get cut off — reduce padding and use 14px font inside the table on screens under 430px.
+
+5. New Leaderboard button appears twice on desktop It's in the nav and also next to the heading — redundant.
+
+Remove the New Leaderboard button from the main nav bar. Keep it only next to the Leaderboards heading on the leaderboards page, and only show it to admin users. On mobile, move it below the page subtitle so it doesn't crowd the heading.
+
+6. No visual separation between leaderboard cards and the rankings tables below The page feels like one long undifferentiated scroll.
+
+Add a clearly labeled section divider between the leaderboard cards section and the Overall Rankings/Most Improved section below it. Use a full-width horizontal rule with a centered or left-aligned section label like "Season Stats" in small caps or muted text above the tables.
+

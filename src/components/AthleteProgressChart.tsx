@@ -38,27 +38,35 @@ export default function AthleteProgressChart({
   }
 
   return (
-    <ResponsiveContainer width="100%" height={280}>
-      <LineChart data={data} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+    <div className="w-full overflow-x-auto -webkit-overflow-scrolling-touch">
+    <ResponsiveContainer width="100%" minWidth={300} height={260}>
+      <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" />
         <XAxis
           dataKey="date"
-          tick={{ fontSize: 11 }}
+          tick={{ fontSize: 11, fill: "#94a3b8" }}
           tickLine={false}
           axisLine={false}
         />
         <YAxis
-          tick={{ fontSize: 11 }}
+          tick={{ fontSize: 11, fill: "#94a3b8" }}
           tickLine={false}
           axisLine={false}
-          tickFormatter={(v) => `${v} lbs`}
-          width={64}
+          tickFormatter={(v) => `${v}`}
+          width={48}
         />
         <Tooltip
           formatter={(value, name) => [`${value} lbs`, name as string]}
-          contentStyle={{ fontSize: 12 }}
+          contentStyle={{
+            background: "rgba(10,15,30,0.95)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "8px",
+            fontSize: 12,
+            color: "#e2e8f0",
+          }}
+          labelStyle={{ color: "#f1f5f9" }}
         />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <Legend wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
         {liftNames.map((name, i) => (
           <Line
             key={name}
@@ -73,5 +81,6 @@ export default function AthleteProgressChart({
         ))}
       </LineChart>
     </ResponsiveContainer>
+    </div>
   )
 }

@@ -116,6 +116,36 @@
     --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ── Always-dark gradient theme ───────────────────────────────── */
+
+/* Make --background transparent so the html gradient shows through */
+.dark {
+  --background: transparent;
+}
+
+/* Full-page gradient pinned to the viewport */
+html {
+  background: linear-gradient(135deg, #0A0F1E 0%, #0F0F0F 100%);
+  background-attachment: fixed;
+  min-height: 100dvh;
+}
+
+/* Glass card — overrides the bg-card + ring on every Card component */
+.dark [data-slot="card"] {
+  background: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Utility for glass surfaces that aren't Card components (tables, banners) */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -125,5 +155,26 @@
     }
   html {
     @apply font-sans;
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     }
+  /* Prevent double-tap zoom on interactive elements */
+  a, button, input, select, textarea, [role="button"] {
+    touch-action: manipulation;
+    }
+}
+
+/* Mobile tap targets: at least 44px on small screens */
+@media (max-width: 640px) {
+  input:not([type="hidden"]),
+  select,
+  [data-slot="select-trigger"],
+  textarea {
+    min-height: 44px;
+  }
+  /* Ensure table containers scroll horizontally with momentum on iOS */
+  [data-slot="table-container"] {
+    -webkit-overflow-scrolling: touch;
+  }
 }
