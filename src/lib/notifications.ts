@@ -3,11 +3,17 @@ import { Resend } from "resend"
 import { prisma } from "./prisma"
 
 // Configure web-push VAPID
-webpush.setVapidDetails(
-  process.env.VAPID_CONTACT ?? "mailto:admin@example.com",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "",
-  process.env.VAPID_PRIVATE_KEY ?? ""
-)
+const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY
+const vapidReady = !!(vapidPublicKey && vapidPrivateKey)
+
+if (vapidReady) {
+  webpush.setVapidDetails(
+    process.env.VAPID_CONTACT ?? "mailto:admin@example.com",
+    vapidPublicKey!,
+    vapidPrivateKey!
+  )
+}
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
@@ -45,6 +51,10 @@ export async function sendSurpassNotifications(events: SurpassEvent[]) {
 }
 
 async function sendPushToAthlete(athleteId: number, title: string, body: string) {
+  if (!vapidReady) {
+    console.warn("VAPID keys not set — skipping push notification")
+    return
+  }
   const subs = await prisma.pushSubscription.findMany({ where: { athleteId } })
 
   for (const sub of subs) {
