@@ -10,7 +10,7 @@ import {
   ReferenceLine,
   ResponsiveContainer,
 } from "recharts"
-import { formatValue, formatTime } from "@/lib/rankings"
+import { formatValue, formatTime } from "@/lib/format"
 
 type DataPoint = { date: string; weight: number }
 

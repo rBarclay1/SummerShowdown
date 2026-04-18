@@ -1,4 +1,5 @@
 import { prisma } from "./prisma"
+export { formatTime, formatValue, formatGain } from "./format"
 
 export type AthleteRanking = {
   rank: number
@@ -37,17 +38,6 @@ export type MonthlyImprovedRanking = {
   monthScore: number
   liftCount: number
   onFire: boolean
-}
-
-export function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60)
-  const secs = Math.round(seconds % 60)
-  return `${mins}:${secs.toString().padStart(2, "0")}`
-}
-
-export function formatValue(value: number, activityType: string): string {
-  if (activityType === "time_trial") return formatTime(value)
-  return `${value} lbs`
 }
 
 export function computeRankings(
@@ -151,12 +141,6 @@ export async function getAllLeaderboardRankings(): Promise<LeaderboardWithRankin
 
   const results = await Promise.all(leaderboards.map((lb) => getLeaderboardRankings(lb.id)))
   return results.filter(Boolean) as LeaderboardWithRankings[]
-}
-
-export function formatGain(gain: number | null): string {
-  if (gain === null) return "—"
-  const sign = gain >= 0 ? "+" : ""
-  return `${sign}${gain.toFixed(1)}%`
 }
 
 export async function getOverallRankings(): Promise<OverallAthleteRanking[]> {
