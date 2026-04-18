@@ -5,8 +5,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("TURSO_DATABASE_URL")
+  provider     = "sqlite"
   relationMode = "prisma"
 }
 
