@@ -15,9 +15,8 @@ export async function addLift(formData: FormData): Promise<LiftActionResult> {
   if (!name) return { success: false, error: "Lift name cannot be blank." }
   if (name.length > 60) return { success: false, error: "Lift name must be 60 characters or fewer." }
 
-  const existing = await prisma.lift.findFirst({
-    where: { name: { equals: name, mode: "insensitive" } },
-  })
+  const allLifts = await prisma.lift.findMany({ select: { id: true, name: true } })
+  const existing = allLifts.find((l) => l.name.toLowerCase() === name.toLowerCase())
   if (existing) return { success: false, error: `"${existing.name}" already exists.` }
 
   await prisma.lift.create({ data: { name } })
@@ -39,9 +38,10 @@ export async function renameLift(
   if (name.length > 60) return { success: false, error: "Name must be 60 characters or fewer." }
 
   // Duplicate check — exclude the lift being renamed
-  const conflict = await prisma.lift.findFirst({
-    where: { name: { equals: name, mode: "insensitive" }, id: { not: liftId } },
-  })
+  const allLifts = await prisma.lift.findMany({ select: { id: true, name: true } })
+  const conflict = allLifts.find(
+    (l) => l.name.toLowerCase() === name.toLowerCase() && l.id !== liftId
+  )
   if (conflict) return { success: false, error: `"${conflict.name}" already exists.` }
 
   await prisma.lift.update({ where: { id: liftId }, data: { name } })
