@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Pencil, Trash2, X } from "lucide-react"
 import { deleteLeaderboard, updateLeaderboard } from "@/app/leaderboard/[id]/actions"
 import { useUser } from "@clerk/nextjs"
+import { useIsAdmin } from "@/components/AdminProvider"
 
 type Lift = { id: number; name: string }
 
@@ -86,8 +87,8 @@ export default function LeaderboardAdminControls({
 
   // Client-side admin guard — all hooks above, early return here
   const taken = new Set(takenLiftIds)
-  if (!isLoaded) return null
-  if ((user?.publicMetadata as { isAdmin?: boolean } | undefined)?.isAdmin !== true) return null
+  const { isAdmin } = useIsAdmin()
+  if (!isLoaded || !isAdmin) return null
 
   return (
     <>

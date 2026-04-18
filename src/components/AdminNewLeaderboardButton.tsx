@@ -4,6 +4,7 @@ import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useUser } from "@clerk/nextjs"
+import { useIsAdmin } from "@/components/AdminProvider"
 
 export default function AdminNewLeaderboardButton({
   size = "default",
@@ -12,10 +13,10 @@ export default function AdminNewLeaderboardButton({
   size?: "default" | "sm"
   className?: string
 }) {
-  const { user, isLoaded } = useUser()
+  const { isLoaded } = useUser()
+  const { isAdmin } = useIsAdmin()
 
-  if (!isLoaded) return null
-  if ((user?.publicMetadata as { isAdmin?: boolean } | undefined)?.isAdmin !== true) return null
+  if (!isLoaded || !isAdmin) return null
 
   return (
     <Link

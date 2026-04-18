@@ -11,7 +11,7 @@ export default async function MyProfilePage() {
     select: { id: true },
   })
 
-  if (!athlete) notFound()
+  if (!athlete) redirect("/athlete/setup")
 
   redirect(`/athlete/${athlete.id}`)
 }

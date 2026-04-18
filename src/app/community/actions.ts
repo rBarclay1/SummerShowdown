@@ -9,15 +9,16 @@ async function resolveAthleteFromClerk() {
   const { userId } = await auth()
   if (!userId) return null
 
-  const clerkUser = await currentUser()
-  const athleteName =
-    [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(" ").trim() ||
-    clerkUser?.username ||
-    ""
-  if (!athleteName) return null
-
   let athlete = await prisma.athlete.findUnique({ where: { clerkId: userId } })
   if (!athlete) {
+    // Move Clerk API fetch here: only happens during initial user creation
+    const clerkUser = await currentUser()
+    const athleteName =
+      [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(" ").trim() ||
+      clerkUser?.username ||
+      ""
+    if (!athleteName) return null
+
     const existing = await prisma.athlete.findUnique({ where: { name: athleteName } })
     if (existing && !existing.clerkId) {
       athlete = await prisma.athlete.update({

@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic"
 export default async function CommunityPage() {
   const [posts, admin, clerkUser] = await Promise.all([
     prisma.post.findMany({
+      take: 20, // TODO: Implement cursor-based pagination for infinite scroll later
       include: {
         author: true,
         comments: {

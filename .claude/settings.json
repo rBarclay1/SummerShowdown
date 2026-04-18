@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(DATABASE_URL=\"file:./dev.db\" npx prisma migrate deploy)",
+      "Bash(DATABASE_URL=\"file:./prisma/dev.db\" npx prisma migrate reset --force)",
+      "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"proceed with the reset\" DATABASE_URL=\"file:./prisma/dev.db\" npx prisma migrate reset --force)",
+      "Bash(DATABASE_URL=\"file:./prisma/dev.db\" npx prisma migrate dev --name sync_schema)",
+      "Bash(DATABASE_URL=\"file:./prisma/dev.db\" npx prisma migrate dev --name sync_schema --create-only)",
+      "Bash(DATABASE_URL=\"file:./prisma/dev.db\" npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema.prisma --script)",
+      "Bash(DATABASE_URL=\"file:./prisma/dev.db\" npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema.prisma --script)",
+      "Bash(DATABASE_URL=\"file:./prisma/dev.db\" npx prisma migrate deploy)",
+      "Bash(env)",
+      "Bash(npx tsx *)",
+      "Bash(sqlite3 dev.db \"SELECT id, name, clerkId FROM Athlete ORDER BY name;\")",
+      "Bash(sqlite3 prisma/dev.db \"SELECT id, name, clerkId FROM Athlete ORDER BY name;\")"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\barcl\\OneDrive\\Documents\\summerShowdown\\SummerShowdown\\prisma\\migrations\\20260416_add_lift_is_total_load",
+      "C:\\Users\\barcl\\OneDrive\\Documents\\summerShowdown\\SummerShowdown\\prisma\\migrations"
+    ]
+  }
+}

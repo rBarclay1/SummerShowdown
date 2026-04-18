@@ -31,13 +31,6 @@ async function main() {
     create: {
       name: "Powerlifting Total",
       mainLiftId: squat.id,
-      leaderboardLifts: {
-        create: [
-          { liftId: squat.id },
-          { liftId: bench.id },
-          { liftId: deadlift.id },
-        ],
-      },
     },
   })
 
@@ -47,19 +40,13 @@ async function main() {
     create: {
       name: "Push Day",
       mainLiftId: bench.id,
-      leaderboardLifts: {
-        create: [
-          { liftId: bench.id },
-          { liftId: ohp.id },
-        ],
-      },
     },
   })
 
   console.log(`Seeded leaderboards: ${powerlifting.name}, ${pushDay.name}`)
 
   // Seed athletes + sample entries
-  const athleteNames = ["Alex Rivera", "Jordan Kim", "Sam Chen", "Taylor Brooks"]
+  const athleteNames = ["Riley Barclay", "Alex Rivera", "Jordan Kim", "Sam Chen", "Taylor Brooks"]
   const athletes = await Promise.all(
     athleteNames.map((name) =>
       prisma.athlete.upsert({ where: { name }, update: {}, create: { name } })
@@ -70,6 +57,7 @@ async function main() {
   // Sample PRs for Powerlifting Total
   const plData: [string, number, number, number][] = [
     // [athleteName, squatLbs, benchLbs, deadliftLbs] — baseline
+    ["Riley Barclay", 225, 175, 315],
     ["Alex Rivera", 185, 135, 225],
     ["Jordan Kim", 155, 115, 205],
     ["Sam Chen", 225, 165, 275],
@@ -97,9 +85,9 @@ async function main() {
       ],
     })
     // Current PRs (varies)
-    const squatGain = athleteName === "Alex Rivera" ? 1.22 : athleteName === "Jordan Kim" ? 1.15 : athleteName === "Sam Chen" ? 1.1 : 1.18
-    const benchGain = athleteName === "Alex Rivera" ? 1.18 : athleteName === "Jordan Kim" ? 1.12 : athleteName === "Sam Chen" ? 1.08 : 1.14
-    const dlGain = athleteName === "Alex Rivera" ? 1.2 : athleteName === "Jordan Kim" ? 1.14 : athleteName === "Sam Chen" ? 1.09 : 1.17
+    const squatGain = athleteName === "Riley Barclay" ? 1.13 : athleteName === "Alex Rivera" ? 1.22 : athleteName === "Jordan Kim" ? 1.15 : athleteName === "Sam Chen" ? 1.1 : 1.18
+    const benchGain = athleteName === "Riley Barclay" ? 1.11 : athleteName === "Alex Rivera" ? 1.18 : athleteName === "Jordan Kim" ? 1.12 : athleteName === "Sam Chen" ? 1.08 : 1.14
+    const dlGain = athleteName === "Riley Barclay" ? 1.10 : athleteName === "Alex Rivera" ? 1.2 : athleteName === "Jordan Kim" ? 1.14 : athleteName === "Sam Chen" ? 1.09 : 1.17
     await prisma.pREntry.createMany({
       data: [
         { athleteId: athlete.id, liftId: squat.id, leaderboardId: powerlifting.id, weightLbs: Math.round(squatBaseline * squatGain), date: daysAgo(3) },
