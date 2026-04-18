@@ -18,6 +18,7 @@ export default async function AdminLiftsPage() {
   const lifts = raw.map((l) => ({
     id: l.id,
     name: l.name,
+    type: l.type,
     leaderboardCount: l._count.leaderboards,
     entryCount: l._count.entries,
   }))
@@ -25,9 +26,9 @@ export default async function AdminLiftsPage() {
   return (
     <main className="max-w-xl mx-auto px-4 py-10">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Manage Lifts</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Manage Activities</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Add, rename, or delete lift types. Renaming a lift updates it everywhere —
+          Add, rename, or delete activity types. Renaming an activity updates it everywhere —
           leaderboards, PR logs, and athlete profiles all reflect the change immediately.
         </p>
       </div>

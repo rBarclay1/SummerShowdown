@@ -6,13 +6,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { createLeaderboard } from "@/app/leaderboard/new/actions"
 
-type Lift = { id: number; name: string }
+type Activity = { id: number; name: string; type: string }
 
 export default function CreateLeaderboardForm({
   availableLifts,
   takenLiftIds,
 }: {
-  availableLifts: Lift[]
+  availableLifts: Activity[]
   takenLiftIds: number[]
 }) {
   const taken = new Set(takenLiftIds)
@@ -20,6 +20,7 @@ export default function CreateLeaderboardForm({
   const [endDate, setEndDate] = useState("")
   const [selectedLiftId, setSelectedLiftId] = useState<number | null>(null)
   const [newLiftName, setNewLiftName] = useState("")
+  const [newLiftType, setNewLiftType] = useState<"lift" | "time_trial">("lift")
   const [error, setError] = useState("")
   const [isPending, startTransition] = useTransition()
 
@@ -34,13 +35,14 @@ export default function CreateLeaderboardForm({
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError("")
-    if (selectedLiftId === null) { setError("Select or create a lift."); return }
-    if (isNewLift && !newLiftName.trim()) { setError("Enter a name for the new lift."); return }
+    if (selectedLiftId === null) { setError("Select or create an activity."); return }
+    if (isNewLift && !newLiftName.trim()) { setError("Enter a name for the new activity."); return }
 
     const fd = new FormData()
     if (endDate) fd.append("endDate", endDate)
     if (isNewLift) {
       fd.append("newLiftName", newLiftName.trim())
+      fd.append("newLiftType", newLiftType)
     } else {
       fd.append("liftId", selectedLiftId!.toString())
     }
@@ -73,11 +75,11 @@ export default function CreateLeaderboardForm({
         </p>
       </div>
 
-      {/* Lift selection */}
+      {/* Activity selection */}
       <div className="space-y-3">
-        <Label>Lift</Label>
+        <Label>Activity</Label>
         <p className="text-xs text-muted-foreground -mt-1">
-          Each lift can only have one active leaderboard.
+          Each activity can only have one active leaderboard.
         </p>
         <div className="flex flex-wrap gap-2">
           {availableLifts.map((lift) => {
@@ -89,7 +91,7 @@ export default function CreateLeaderboardForm({
                 type="button"
                 onClick={() => !isTaken && handleLiftPick(lift.id)}
                 disabled={isPending || isTaken}
-                title={isTaken ? "A leaderboard already exists for this lift" : undefined}
+                title={isTaken ? "A leaderboard already exists for this activity" : undefined}
                 className={`text-sm px-4 py-2 min-h-[44px] rounded-full border transition-colors
                   ${isTaken
                     ? "opacity-40 cursor-not-allowed line-through"
@@ -99,6 +101,9 @@ export default function CreateLeaderboardForm({
                   }`}
               >
                 {lift.name}
+                <span className="ml-1.5 text-xs opacity-60">
+                  {lift.type === "time_trial" ? "⏱" : "🏋️"}
+                </span>
               </button>
             )
           })}
@@ -112,18 +117,40 @@ export default function CreateLeaderboardForm({
                 : "hover:bg-muted border-dashed"
             }`}
           >
-            + New lift
+            + New activity
           </button>
         </div>
 
         {isNewLift && (
-          <Input
-            autoFocus
-            placeholder="e.g. Log Press, Safety Bar Squat…"
-            value={newLiftName}
-            onChange={(e) => setNewLiftName(e.target.value)}
-            disabled={isPending}
-          />
+          <div className="space-y-3">
+            <Input
+              autoFocus
+              placeholder="e.g. Mile Run, 5K, Log Press…"
+              value={newLiftName}
+              onChange={(e) => setNewLiftName(e.target.value)}
+              disabled={isPending}
+            />
+            <div className="flex gap-2">
+              {([
+                { value: "lift", label: "Lift (higher is better)" },
+                { value: "time_trial", label: "Time Trial (lower is better)" },
+              ] as const).map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setNewLiftType(value)}
+                  disabled={isPending}
+                  className={`flex-1 text-sm px-3 py-2 rounded-md border transition-colors ${
+                    newLiftType === value
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "hover:bg-muted"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 

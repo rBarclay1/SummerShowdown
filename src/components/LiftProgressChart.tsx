@@ -10,6 +10,7 @@ import {
   ReferenceLine,
   ResponsiveContainer,
 } from "recharts"
+import { formatValue, formatTime } from "@/lib/rankings"
 
 type DataPoint = { date: string; weight: number }
 
@@ -28,11 +29,13 @@ export default function LiftProgressChart({
   baseline,
   color = "#10b981",
   height = 200,
+  activityType = "lift",
 }: {
   data: DataPoint[]
   baseline: number
   color?: string
   height?: number
+  activityType?: string
 }) {
   if (data.length === 0) {
     return (
@@ -41,6 +44,8 @@ export default function LiftProgressChart({
       </div>
     )
   }
+
+  const isTimeTrial = activityType === "time_trial"
 
   const weights = data.map((d) => d.weight)
   const minY = Math.min(baseline, ...weights)
@@ -62,11 +67,14 @@ export default function LiftProgressChart({
             tick={TICK}
             tickLine={false}
             axisLine={false}
-            width={44}
-            tickFormatter={(v) => `${v}`}
+            width={isTimeTrial ? 52 : 44}
+            tickFormatter={(v) => isTimeTrial ? formatTime(v) : `${v}`}
           />
           <Tooltip
-            formatter={(value) => [`${value} lbs`, "Weight"]}
+            formatter={(value) => [
+              formatValue(value as number, activityType),
+              isTimeTrial ? "Time" : "Weight",
+            ]}
             contentStyle={TOOLTIP_STYLE}
             labelStyle={{ color: "#f1f5f9" }}
           />
@@ -75,7 +83,7 @@ export default function LiftProgressChart({
             stroke="#64748b"
             strokeDasharray="5 3"
             label={{
-              value: `Baseline · ${baseline} lbs`,
+              value: `Baseline · ${formatValue(baseline, activityType)}`,
               position: "insideTopLeft",
               fontSize: 9,
               fill: "#64748b",

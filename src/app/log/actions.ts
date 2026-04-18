@@ -7,7 +7,7 @@ import { sendSurpassNotifications, type SurpassEvent } from "@/lib/notifications
 import { auth, currentUser } from "@clerk/nextjs/server"
 
 export type LogPRResult =
-  | { success: true; entry: { id: number; weightLbs: number }; isBaseline: boolean }
+  | { success: true; entry: { id: number; value: number }; isBaseline: boolean }
   | { success: false; error: string }
 
 export async function logPR(formData: FormData): Promise<LogPRResult> {
@@ -24,22 +24,37 @@ export async function logPR(formData: FormData): Promise<LogPRResult> {
 
     const leaderboardId = parseInt(formData.get("leaderboardId") as string)
     const liftId = parseInt(formData.get("liftId") as string)
-    const weightRaw = parseFloat(formData.get("weight") as string)
-    const unit = formData.get("unit") as "lbs" | "kg"
     const dateStr = formData.get("date") as string
 
-    if (isNaN(leaderboardId) || isNaN(liftId) || isNaN(weightRaw)) {
+    if (isNaN(leaderboardId) || isNaN(liftId)) {
       return { success: false, error: "All fields are required." }
     }
-
-    const weightLbs = unit === "kg" ? weightRaw * 2.20462 : weightRaw
-    const date = dateStr ? new Date(dateStr) : new Date()
 
     const leaderboard = await prisma.leaderboard.findUnique({
       where: { id: leaderboardId },
       include: { mainLift: true },
     })
     if (!leaderboard) return { success: false, error: "Leaderboard not found." }
+
+    const isTimeTrial = leaderboard.mainLift.type === "time_trial"
+
+    // Parse the submitted value based on activity type
+    let storedValue: number
+    if (isTimeTrial) {
+      const timeRaw = formData.get("value") as string
+      const seconds = parseFloat(timeRaw)
+      if (isNaN(seconds) || seconds <= 0) {
+        return { success: false, error: "Enter a valid time." }
+      }
+      storedValue = seconds
+    } else {
+      const weightRaw = parseFloat(formData.get("value") as string)
+      const unit = formData.get("unit") as "lbs" | "kg"
+      if (isNaN(weightRaw)) return { success: false, error: "All fields are required." }
+      storedValue = unit === "kg" ? weightRaw * 2.20462 : weightRaw
+    }
+
+    const date = dateStr ? new Date(dateStr) : new Date()
 
     // Resolve or create athlete linked to this Clerk user
     let athlete = await prisma.athlete.findUnique({ where: { clerkId: userId } })
@@ -84,9 +99,9 @@ export async function logPR(formData: FormData): Promise<LogPRResult> {
       submitterRankBefore = ranksBefore.get(athlete.id) ?? Infinity
     }
 
-    // Create the entry
+    // Create the entry (weightLbs column stores lbs for lifts, seconds for time trials)
     const entry = await prisma.pREntry.create({
-      data: { athleteId: athlete.id, liftId, leaderboardId, weightLbs, date },
+      data: { athleteId: athlete.id, liftId, leaderboardId, weightLbs: storedValue, date },
     })
 
     // Detect surpasses — only when the submitter could have improved their rank
@@ -135,7 +150,7 @@ export async function logPR(formData: FormData): Promise<LogPRResult> {
     revalidatePath(`/leaderboard/${leaderboardId}`)
     revalidatePath(`/athlete/${athlete.id}`)
 
-    return { success: true, entry: { id: entry.id, weightLbs: entry.weightLbs }, isBaseline }
+    return { success: true, entry: { id: entry.id, value: entry.weightLbs }, isBaseline }
   } catch (e) {
     console.error(e)
     return { success: false, error: "Failed to log PR. Please try again." }

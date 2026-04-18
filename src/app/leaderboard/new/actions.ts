@@ -29,10 +29,14 @@ export async function createLeaderboard(formData: FormData): Promise<CreateLeade
     if (!lift) return { success: false, error: "Lift not found." }
     liftName = lift.name
   } else {
+    const newLiftTypeRaw = formData.get("newLiftType") as string | null
+    const newLiftTypeValue = newLiftTypeRaw === "time_trial" ? "time_trial" : "lift"
+    const newLiftUnit = newLiftTypeValue === "time_trial" ? "seconds" : "lbs"
+
     const lift = await prisma.lift.upsert({
       where: { name: newLiftName! },
       update: {},
-      create: { name: newLiftName! },
+      create: { name: newLiftName!, type: newLiftTypeValue, unit: newLiftUnit },
     })
     liftId = lift.id
     liftName = lift.name

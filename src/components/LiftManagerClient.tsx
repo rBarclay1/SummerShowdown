@@ -6,14 +6,15 @@ import { Input } from "@/components/ui/input"
 import { Pencil, Trash2, X, Check, Plus } from "lucide-react"
 import { addLift, renameLift, deleteLift } from "@/app/admin/lifts/actions"
 
-type LiftWithUsage = {
+type ActivityWithUsage = {
   id: number
   name: string
+  type: string
   leaderboardCount: number
   entryCount: number
 }
 
-export default function LiftManagerClient({ lifts: initial }: { lifts: LiftWithUsage[] }) {
+export default function LiftManagerClient({ lifts: initial }: { lifts: ActivityWithUsage[] }) {
   // Optimistic local list — server revalidation provides the ground truth
   const [lifts, setLifts] = useState(initial)
 
@@ -22,6 +23,7 @@ export default function LiftManagerClient({ lifts: initial }: { lifts: LiftWithU
 
   // ── Add form ──────────────────────────────────────────────────
   const [addName, setAddName] = useState("")
+  const [addType, setAddType] = useState<"lift" | "time_trial">("lift")
   const [addError, setAddError] = useState("")
   const [isAdding, startAdd] = useTransition()
 
@@ -33,11 +35,13 @@ export default function LiftManagerClient({ lifts: initial }: { lifts: LiftWithU
 
     const fd = new FormData()
     fd.append("name", trimmed)
+    fd.append("type", addType)
 
     startAdd(async () => {
       const res = await addLift(fd)
       if (res.success) {
         setAddName("")
+        setAddType("lift")
       } else {
         setAddError(res.error)
       }
@@ -46,33 +50,56 @@ export default function LiftManagerClient({ lifts: initial }: { lifts: LiftWithU
 
   return (
     <div className="space-y-6">
-      {/* ── Add lift ─────────────────────────────────────────── */}
-      <form onSubmit={handleAdd} className="flex gap-2 items-start">
-        <div className="flex-1 space-y-1">
-          <Input
-            placeholder="New lift name…"
-            value={addName}
-            onChange={(e) => { setAddName(e.target.value); setAddError("") }}
-            disabled={isAdding}
-            className={addError ? "border-destructive" : ""}
-          />
-          {addError && <p className="text-xs text-destructive">{addError}</p>}
+      {/* ── Add activity ─────────────────────────────────────────── */}
+      <form onSubmit={handleAdd} className="space-y-3">
+        <div className="flex gap-2 items-start">
+          <div className="flex-1 space-y-1">
+            <Input
+              placeholder="New activity name…"
+              value={addName}
+              onChange={(e) => { setAddName(e.target.value); setAddError("") }}
+              disabled={isAdding}
+              className={addError ? "border-destructive" : ""}
+            />
+            {addError && <p className="text-xs text-destructive">{addError}</p>}
+          </div>
+          <Button type="submit" disabled={isAdding || !addName.trim()} className="gap-1.5 shrink-0">
+            <Plus className="h-4 w-4" />
+            {isAdding ? "Adding…" : "Add Activity"}
+          </Button>
         </div>
-        <Button type="submit" disabled={isAdding || !addName.trim()} className="gap-1.5 shrink-0">
-          <Plus className="h-4 w-4" />
-          {isAdding ? "Adding…" : "Add Lift"}
-        </Button>
+        {/* Type selector */}
+        <div className="flex gap-2">
+          {([
+            { value: "lift", label: "Lift (higher is better)" },
+            { value: "time_trial", label: "Time Trial (lower is better)" },
+          ] as const).map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setAddType(value)}
+              disabled={isAdding}
+              className={`flex-1 text-sm px-3 py-2 rounded-md border transition-colors ${
+                addType === value
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "hover:bg-muted"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </form>
 
-      {/* ── Lift list ─────────────────────────────────────────── */}
+      {/* ── Activity list ─────────────────────────────────────────── */}
       {lifts.length === 0 ? (
         <p className="text-sm text-muted-foreground py-8 text-center border rounded-lg bg-muted/20">
-          No lifts yet. Add one above.
+          No activities yet. Add one above.
         </p>
       ) : (
         <ul className="divide-y border rounded-lg overflow-hidden">
           {lifts.map((lift) => (
-            <LiftRow
+            <ActivityRow
               key={lift.id}
               lift={lift}
               onRenamed={(newName) =>
@@ -93,12 +120,12 @@ export default function LiftManagerClient({ lifts: initial }: { lifts: LiftWithU
 
 // ── Individual row ──────────────────────────────────────────────────────────
 
-function LiftRow({
+function ActivityRow({
   lift,
   onRenamed,
   onDeleted,
 }: {
-  lift: LiftWithUsage
+  lift: ActivityWithUsage
   onRenamed: (name: string) => void
   onDeleted: () => void
 }) {
@@ -153,11 +180,7 @@ function LiftRow({
 
   function requestDelete() {
     setDeleteError("")
-    if (hasData) {
-      setDeleteStage("confirm")
-    } else {
-      setDeleteStage("confirm")
-    }
+    setDeleteStage("confirm")
   }
 
   function handleDelete(force: boolean) {
@@ -167,12 +190,12 @@ function LiftRow({
         onDeleted()
       } else {
         setDeleteError(res.error)
-        // If the server says confirmation is needed (shouldn't happen given our UI flow,
-        // but guard it), bump to force-confirm stage
         if (!force) setDeleteStage("force-confirm")
       }
     })
   }
+
+  const typeLabel = lift.type === "time_trial" ? "Time Trial" : "Lift"
 
   return (
     <li className="bg-background px-4 py-3">
@@ -271,8 +294,10 @@ function LiftRow({
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <span className="text-sm font-medium">{lift.name}</span>
+            <span className="ml-2 text-xs text-muted-foreground">{typeLabel}</span>
             {hasData && (
               <span className="ml-2 text-xs text-muted-foreground">
+                ·{" "}
                 {[
                   lift.leaderboardCount > 0
                     ? `${lift.leaderboardCount} leaderboard${lift.leaderboardCount !== 1 ? "s" : ""}`

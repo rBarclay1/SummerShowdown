@@ -27,7 +27,7 @@ export type LeaderboardWithRankings = {
   id: number
   name: string
   endDate: Date | null
-  mainLift: { id: number; name: string }
+  mainLift: { id: number; name: string; type: string; unit: string }
   rankings: AthleteRanking[]
 }
 
@@ -39,13 +39,24 @@ export type MonthlyImprovedRanking = {
   onFire: boolean
 }
 
+export function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.round(seconds % 60)
+  return `${mins}:${secs.toString().padStart(2, "0")}`
+}
+
+export function formatValue(value: number, activityType: string): string {
+  if (activityType === "time_trial") return formatTime(value)
+  return `${value} lbs`
+}
+
 export function computeRankings(
   leaderboard: {
     id: number
     name: string
     mainLiftId: number
     endDate: Date | null
-    mainLift: { id: number; name: string }
+    mainLift: { id: number; name: string; type: string; unit: string }
   },
   entries: {
     athleteId: number
@@ -56,6 +67,8 @@ export function computeRankings(
     lift: { id: number; name: string }
   }[]
 ): LeaderboardWithRankings {
+  const isTimeTrial = leaderboard.mainLift.type === "time_trial"
+
   // Group entries by athleteId
   const grouped = new Map<number, { athlete: { id: number; name: string }; entries: typeof entries }>()
   for (const entry of entries) {
@@ -74,16 +87,29 @@ export function computeRankings(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     )
     const baseline = sorted[0].weightLbs
-    const current = Math.max(...athleteEntries.map((e) => e.weightLbs))
-    const percentGain = baseline === 0 ? 0 : ((current - baseline) / baseline) * 100
 
-    const recentMax = Math.max(
-      ...athleteEntries
-        .filter((e) => new Date(e.date) >= sevenDaysAgo)
-        .map((e) => e.weightLbs),
-      -Infinity
-    )
-    const onFire = recentMax >= current
+    const recentEntries = athleteEntries.filter((e) => new Date(e.date) >= sevenDaysAgo)
+
+    let current: number
+    let percentGain: number
+    let onFire: boolean
+
+    if (isTimeTrial) {
+      // Lower is better: current = fastest (min), gain = (baseline - current) / baseline * 100
+      current = Math.min(...athleteEntries.map((e) => e.weightLbs))
+      percentGain = baseline === 0 ? 0 : ((baseline - current) / baseline) * 100
+      const recentMin = recentEntries.length > 0
+        ? Math.min(...recentEntries.map((e) => e.weightLbs))
+        : Infinity
+      onFire = recentMin <= current
+    } else {
+      current = Math.max(...athleteEntries.map((e) => e.weightLbs))
+      percentGain = baseline === 0 ? 0 : ((current - baseline) / baseline) * 100
+      const recentMax = recentEntries.length > 0
+        ? Math.max(...recentEntries.map((e) => e.weightLbs))
+        : -Infinity
+      onFire = recentMax >= current
+    }
 
     rankings.push({ athlete, percentGain, baseline, current, onFire })
   }
@@ -156,20 +182,32 @@ export async function getOverallRankings(): Promise<OverallAthleteRanking[]> {
   >()
 
   for (const [, groupEntries] of grouped) {
+    const isTimeTrial = groupEntries[0].lift.type === "time_trial"
     const sorted = [...groupEntries].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     )
     const baseline = sorted[0].weightLbs
-    const current = Math.max(...groupEntries.map((e) => e.weightLbs))
-    const percentGain = baseline === 0 ? 0 : ((current - baseline) / baseline) * 100
 
-    const recentMax = Math.max(
-      ...groupEntries
-        .filter((e) => new Date(e.date) >= sevenDaysAgo)
-        .map((e) => e.weightLbs),
-      -Infinity
-    )
-    const liftOnFire = recentMax >= current
+    const recentEntries = groupEntries.filter((e) => new Date(e.date) >= sevenDaysAgo)
+
+    let percentGain: number
+    let liftOnFire: boolean
+
+    if (isTimeTrial) {
+      const current = Math.min(...groupEntries.map((e) => e.weightLbs))
+      percentGain = baseline === 0 ? 0 : ((baseline - current) / baseline) * 100
+      const recentMin = recentEntries.length > 0
+        ? Math.min(...recentEntries.map((e) => e.weightLbs))
+        : Infinity
+      liftOnFire = recentMin <= current
+    } else {
+      const current = Math.max(...groupEntries.map((e) => e.weightLbs))
+      percentGain = baseline === 0 ? 0 : ((current - baseline) / baseline) * 100
+      const recentMax = recentEntries.length > 0
+        ? Math.max(...recentEntries.map((e) => e.weightLbs))
+        : -Infinity
+      liftOnFire = recentMax >= current
+    }
 
     const { athlete } = sorted[0]
     if (!athleteMap.has(athlete.id)) {
@@ -211,17 +249,25 @@ export async function getWeeklyWinner(): Promise<WeeklyWinner | null> {
   let best: WeeklyWinner | null = null
 
   for (const [, groupEntries] of grouped) {
+    const isTimeTrial = groupEntries[0].lift.type === "time_trial"
     const before = groupEntries.filter((e) => new Date(e.date) < sevenDaysAgo)
     const recent = groupEntries.filter((e) => new Date(e.date) >= sevenDaysAgo)
 
     if (before.length === 0 || recent.length === 0) continue
 
-    const prevBest = Math.max(...before.map((e) => e.weightLbs))
-    const recentBest = Math.max(...recent.map((e) => e.weightLbs))
+    let weekGain: number
 
-    if (recentBest <= prevBest) continue
-
-    const weekGain = ((recentBest - prevBest) / prevBest) * 100
+    if (isTimeTrial) {
+      const prevBest = Math.min(...before.map((e) => e.weightLbs))
+      const recentBest = Math.min(...recent.map((e) => e.weightLbs))
+      if (recentBest >= prevBest) continue
+      weekGain = ((prevBest - recentBest) / prevBest) * 100
+    } else {
+      const prevBest = Math.max(...before.map((e) => e.weightLbs))
+      const recentBest = Math.max(...recent.map((e) => e.weightLbs))
+      if (recentBest <= prevBest) continue
+      weekGain = ((recentBest - prevBest) / prevBest) * 100
+    }
 
     if (!best || weekGain > best.weekGain) {
       const { athlete, lift } = groupEntries[0]
@@ -233,7 +279,7 @@ export async function getWeeklyWinner(): Promise<WeeklyWinner | null> {
 }
 
 /**
- * Builds time-series progress data for a leaderboard (single lift).
+ * Builds time-series % gain progress data for a leaderboard.
  */
 export function buildLeaderboardProgressData(
   entries: {
@@ -242,6 +288,7 @@ export function buildLeaderboardProgressData(
     weightLbs: number
     date: Date
     athlete: { id: number; name: string }
+    lift: { id: number; name: string; type: string }
   }[],
   mainLiftId: number
 ): { chartData: Record<string, string | number>[]; athleteNames: string[] } {
@@ -251,14 +298,16 @@ export function buildLeaderboardProgressData(
 
   if (mainEntries.length === 0) return { chartData: [], athleteNames: [] }
 
+  const isTimeTrial = mainEntries[0].lift.type === "time_trial"
+
   const baselines = new Map<number, number>()
-  const runningMax = new Map<number, number>()
+  const runningBest = new Map<number, number>()
   const athleteNameMap = new Map<number, string>()
 
   for (const e of mainEntries) {
     if (!baselines.has(e.athleteId)) {
       baselines.set(e.athleteId, e.weightLbs)
-      runningMax.set(e.athleteId, e.weightLbs)
+      runningBest.set(e.athleteId, e.weightLbs)
       athleteNameMap.set(e.athleteId, e.athlete.name)
     }
   }
@@ -285,12 +334,18 @@ export function buildLeaderboardProgressData(
     const point: Record<string, string | number> = { date: dateLabel }
 
     for (const e of dayEntries) {
-      const prev = runningMax.get(e.athleteId) ?? e.weightLbs
-      const newMax = Math.max(prev, e.weightLbs)
-      runningMax.set(e.athleteId, newMax)
+      const prev = runningBest.get(e.athleteId) ?? e.weightLbs
+      const newBest = isTimeTrial
+        ? Math.min(prev, e.weightLbs)
+        : Math.max(prev, e.weightLbs)
+      runningBest.set(e.athleteId, newBest)
 
       const baseline = baselines.get(e.athleteId)!
-      const gain = baseline !== 0 ? ((newMax - baseline) / baseline) * 100 : 0
+      const gain = baseline !== 0
+        ? isTimeTrial
+          ? ((baseline - newBest) / baseline) * 100
+          : ((newBest - baseline) / baseline) * 100
+        : 0
       point[e.athlete.name] = parseFloat(gain.toFixed(1))
     }
 
@@ -332,20 +387,38 @@ export async function getMostImprovedThisMonth(): Promise<MonthlyImprovedRanking
   >()
 
   for (const [, groupEntries] of grouped) {
+    const isTimeTrial = groupEntries[0].lift.type === "time_trial"
     const before = groupEntries.filter((e) => new Date(e.date) < thirtyDaysAgo)
     const recent = groupEntries.filter((e) => new Date(e.date) >= thirtyDaysAgo)
 
     if (before.length === 0 || recent.length === 0) continue
 
-    const prevBest = Math.max(...before.map((e) => e.weightLbs))
-    const recentBest = Math.max(...recent.map((e) => e.weightLbs))
-    const monthGain = ((recentBest - prevBest) / prevBest) * 100
+    let monthGain: number
+    let liftOnFire: boolean
 
-    const recentMax = Math.max(...recent.map((e) => e.weightLbs), -Infinity)
-    const recentFireEntries = groupEntries.filter((e) => new Date(e.date) >= sevenDaysAgo)
-    const fireMax =
-      recentFireEntries.length > 0 ? Math.max(...recentFireEntries.map((e) => e.weightLbs)) : -Infinity
-    const liftOnFire = fireMax >= recentMax && recentFireEntries.length > 0
+    if (isTimeTrial) {
+      const prevBest = Math.min(...before.map((e) => e.weightLbs))
+      const recentBest = Math.min(...recent.map((e) => e.weightLbs))
+      monthGain = ((prevBest - recentBest) / prevBest) * 100
+
+      const recentFireEntries = groupEntries.filter((e) => new Date(e.date) >= sevenDaysAgo)
+      const allTimeMin = Math.min(...groupEntries.map((e) => e.weightLbs))
+      const fireMin = recentFireEntries.length > 0
+        ? Math.min(...recentFireEntries.map((e) => e.weightLbs))
+        : Infinity
+      liftOnFire = fireMin <= allTimeMin && recentFireEntries.length > 0
+    } else {
+      const prevBest = Math.max(...before.map((e) => e.weightLbs))
+      const recentBest = Math.max(...recent.map((e) => e.weightLbs))
+      monthGain = ((recentBest - prevBest) / prevBest) * 100
+
+      const recentMax = Math.max(...recent.map((e) => e.weightLbs), -Infinity)
+      const recentFireEntries = groupEntries.filter((e) => new Date(e.date) >= sevenDaysAgo)
+      const fireMax = recentFireEntries.length > 0
+        ? Math.max(...recentFireEntries.map((e) => e.weightLbs))
+        : -Infinity
+      liftOnFire = fireMax >= recentMax && recentFireEntries.length > 0
+    }
 
     const { athlete } = groupEntries[0]
     if (!athleteMap.has(athlete.id)) {

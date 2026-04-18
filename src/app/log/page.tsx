@@ -32,6 +32,7 @@ export default async function LogPage({
     liftId: lb.mainLiftId,
     liftName: lb.mainLift.name,
     isTotalLoad: lb.mainLift.isTotalLoad,
+    activityType: lb.mainLift.type,
   }))
 
   const defaultLeaderboardId = defaultLb ? parseInt(defaultLb) : undefined

@@ -13,6 +13,21 @@ type Leaderboard = {
   liftId: number
   liftName: string
   isTotalLoad: boolean
+  activityType: string
+}
+
+function parseTimeToSeconds(input: string): number | null {
+  const trimmed = input.trim()
+  if (trimmed.includes(":")) {
+    const parts = trimmed.split(":")
+    if (parts.length !== 2) return null
+    const mins = parseInt(parts[0], 10)
+    const secs = parseFloat(parts[1])
+    if (isNaN(mins) || isNaN(secs) || secs >= 60) return null
+    return mins * 60 + secs
+  }
+  const secs = parseFloat(trimmed)
+  return isNaN(secs) ? null : secs
 }
 
 export default function PRForm({
@@ -27,7 +42,7 @@ export default function PRForm({
   const [leaderboardId, setLeaderboardId] = useState<string>(
     defaultLeaderboardId?.toString() ?? ""
   )
-  const [weight, setWeight] = useState("")
+  const [value, setValue] = useState("")
   const [unit, setUnit] = useState<"lbs" | "kg">("lbs")
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [result, setResult] = useState<
@@ -38,8 +53,9 @@ export default function PRForm({
   const [isPending, startTransition] = useTransition()
 
   const selectedLeaderboard = leaderboards.find((l) => l.id.toString() === leaderboardId)
+  const isTimeTrial = selectedLeaderboard?.activityType === "time_trial"
 
-  useEffect(() => { setResult(null) }, [leaderboardId])
+  useEffect(() => { setResult(null); setValue("") }, [leaderboardId])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -48,24 +64,42 @@ export default function PRForm({
     const fd = new FormData()
     fd.append("leaderboardId", leaderboardId)
     fd.append("liftId", selectedLeaderboard!.liftId.toString())
-    fd.append("weight", weight)
-    fd.append("unit", unit)
     fd.append("date", date)
+
+    if (isTimeTrial) {
+      const seconds = parseTimeToSeconds(value)
+      if (seconds === null || seconds <= 0) {
+        setResult({ type: "error", message: "Enter a valid time in M:SS format (e.g. 7:30)." })
+        return
+      }
+      fd.append("value", seconds.toString())
+    } else {
+      fd.append("value", value)
+      fd.append("unit", unit)
+    }
 
     startTransition(async () => {
       const res = await logPR(fd)
       if (res.success) {
-        const displayWeight =
-          unit === "kg"
-            ? `${weight}kg (${(parseFloat(weight) * 2.20462).toFixed(1)} lbs)`
-            : `${weight} lbs`
+        let display: string
+        if (isTimeTrial) {
+          const seconds = parseTimeToSeconds(value)!
+          const mins = Math.floor(seconds / 60)
+          const secs = Math.round(seconds % 60)
+          display = `${mins}:${secs.toString().padStart(2, "0")}`
+        } else {
+          display =
+            unit === "kg"
+              ? `${value}kg (${(parseFloat(value) * 2.20462).toFixed(1)} lbs)`
+              : `${value} lbs`
+        }
         setResult({
           type: "success",
           message: res.isBaseline
-            ? `Baseline set! ${displayWeight} logged as starting point.`
-            : `PR logged! ${displayWeight}`,
+            ? `Baseline set! ${display} logged as starting point.`
+            : `PR logged! ${display}`,
         })
-        setWeight("")
+        setValue("")
       } else {
         setResult({ type: "error", message: res.error })
       }
@@ -101,52 +135,73 @@ export default function PRForm({
                 <span className={cn("font-medium text-sm", isSelected ? "text-white" : "text-foreground")}>
                   {lb.liftName}
                 </span>
+                <span className="text-xs text-muted-foreground shrink-0">
+                  {lb.activityType === "time_trial" ? "Time Trial" : "Lift"}
+                </span>
               </button>
             )
           })}
         </div>
       </div>
 
-      {/* Weight + unit toggle */}
-      <div className="space-y-2">
-        <Label htmlFor="weight">
-          {selectedLeaderboard?.isTotalLoad
-            ? "Total Load (bodyweight + added weight)"
-            : "Weight"}
-        </Label>
-        <div className="flex gap-2">
+      {/* Value input — adapts to activity type */}
+      {isTimeTrial ? (
+        <div className="space-y-2">
+          <Label htmlFor="value">Time (M:SS)</Label>
           <Input
-            id="weight"
-            type="number"
-            min="0"
-            step="0.5"
-            placeholder="e.g. 225"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
+            id="value"
+            type="text"
+            inputMode="decimal"
+            placeholder="e.g. 7:30"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
             disabled={isPending}
-            className="flex-1"
           />
-          <div className="flex rounded-md border overflow-hidden">
-            {(["lbs", "kg"] as const).map((u) => (
-              <button
-                key={u}
-                type="button"
-                onClick={() => setUnit(u)}
-                className={`px-4 min-h-[44px] text-sm font-medium transition-colors ${
-                  unit === u ? "bg-primary text-primary-foreground" : "hover:bg-muted"
-                }`}
-              >
-                {u}
-              </button>
-            ))}
-          </div>
-        </div>
-        {selectedLeaderboard?.isTotalLoad && (
           <p className="text-xs text-muted-foreground">
-            Add your bodyweight and any added weight together. E.g. if you weigh 185 lbs and added 50 lbs, log 235 lbs.
+            Enter your mile time as minutes:seconds. Faster = better.
           </p>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <Label htmlFor="value">
+            {selectedLeaderboard?.isTotalLoad
+              ? "Total Load (bodyweight + added weight)"
+              : "Weight"}
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="value"
+              type="number"
+              min="0"
+              step="0.5"
+              placeholder="e.g. 225"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              disabled={isPending}
+              className="flex-1"
+            />
+            <div className="flex rounded-md border overflow-hidden">
+              {(["lbs", "kg"] as const).map((u) => (
+                <button
+                  key={u}
+                  type="button"
+                  onClick={() => setUnit(u)}
+                  className={`px-4 min-h-[44px] text-sm font-medium transition-colors ${
+                    unit === u ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                  }`}
+                >
+                  {u}
+                </button>
+              ))}
+            </div>
+          </div>
+          {selectedLeaderboard?.isTotalLoad && (
+            <p className="text-xs text-muted-foreground">
+              Add your bodyweight and any added weight together. E.g. if you weigh 185 lbs and added 50 lbs, log 235 lbs.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Date */}
       <div className="space-y-2">
@@ -176,7 +231,7 @@ export default function PRForm({
 
       <Button
         type="submit"
-        disabled={isPending || !leaderboardId || !weight}
+        disabled={isPending || !leaderboardId || !value}
         className="w-full"
       >
         {isPending ? "Logging…" : "Log PR"}

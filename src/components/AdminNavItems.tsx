@@ -14,7 +14,7 @@ export default function AdminNavItems() {
 
   return (
     <Link href="/admin/lifts" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-      Manage Lifts
+      Manage Activities
     </Link>
   )
 }

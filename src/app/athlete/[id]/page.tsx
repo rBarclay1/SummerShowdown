@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import LiftProgressChart from "@/components/LiftProgressChart"
-import { formatGain } from "@/lib/rankings"
+import { formatGain, formatValue } from "@/lib/rankings"
 
 export const dynamic = "force-dynamic"
 
@@ -57,7 +57,7 @@ export default async function AthletePage({
   // Group entries by lift, preserving first-seen order
   const byLift = new Map<
     number,
-    { lift: { id: number; name: string }; entries: typeof athlete.entries }
+    { lift: { id: number; name: string; type: string }; entries: typeof athlete.entries }
   >()
   for (const entry of athlete.entries) {
     if (!byLift.has(entry.liftId)) {
@@ -68,22 +68,36 @@ export default async function AthletePage({
 
   // Per-lift stats + chart data
   const liftData = Array.from(byLift.values()).map(({ lift, entries }) => {
+    const isTimeTrial = lift.type === "time_trial"
     const sorted = [...entries].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     )
     const baseline = sorted[0].weightLbs
-    const current = Math.max(...entries.map((e) => e.weightLbs))
-    const percentGain =
-      baseline === 0 ? 0 : ((current - baseline) / baseline) * 100
+    const current = isTimeTrial
+      ? Math.min(...entries.map((e) => e.weightLbs))
+      : Math.max(...entries.map((e) => e.weightLbs))
+    const percentGain = baseline === 0
+      ? 0
+      : isTimeTrial
+        ? ((baseline - current) / baseline) * 100
+        : ((current - baseline) / baseline) * 100
 
-    // Build per-date max weight for the chart
+    // Build per-date best value for the chart
     const dateMap = new Map<string, number>()
     for (const e of sorted) {
       const label = new Date(e.date).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
       })
-      dateMap.set(label, Math.max(dateMap.get(label) ?? 0, e.weightLbs))
+      const prev = dateMap.get(label)
+      dateMap.set(
+        label,
+        prev === undefined
+          ? e.weightLbs
+          : isTimeTrial
+            ? Math.min(prev, e.weightLbs)
+            : Math.max(prev, e.weightLbs)
+      )
     }
     const chartPoints = Array.from(dateMap.entries()).map(([date, weight]) => ({
       date,
@@ -132,7 +146,7 @@ export default async function AthletePage({
                 {athlete.name}
               </h1>
               <p className="text-sm text-muted-foreground mt-0.5">
-                {liftData.length} lift{liftData.length !== 1 ? "s" : ""} ·{" "}
+                {liftData.length} activit{liftData.length !== 1 ? "ies" : "y"} ·{" "}
                 {athlete.entries.length} PR log{athlete.entries.length !== 1 ? "s" : ""}
               </p>
             </div>
@@ -172,7 +186,7 @@ export default async function AthletePage({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
-                  <p className="text-2xl font-bold">{current} lbs</p>
+                  <p className="text-2xl font-bold">{formatValue(current, lift.type)}</p>
                   <p
                     className={`text-sm font-semibold ${
                       percentGain >= 0 ? "text-emerald-600" : "text-red-500"
@@ -181,7 +195,7 @@ export default async function AthletePage({
                     {formatGain(percentGain)} from baseline
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Baseline: {baseline} lbs ·{" "}
+                    Baseline: {formatValue(baseline, lift.type)} ·{" "}
                     {entryCount} entr{entryCount === 1 ? "y" : "ies"}
                   </p>
                 </CardContent>
@@ -191,10 +205,10 @@ export default async function AthletePage({
         </section>
       )}
 
-      {/* ── Per-Lift Progress Charts ── */}
+      {/* ── Per-Activity Progress Charts ── */}
       {liftData.length > 0 && (
         <section>
-          <h2 className="text-base font-semibold mb-3">Progress by Lift</h2>
+          <h2 className="text-base font-semibold mb-3">Progress by Activity</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {liftData.map(({ lift, baseline, chartPoints }, i) => (
               <Card key={lift.id}>
@@ -206,6 +220,7 @@ export default async function AthletePage({
                     data={chartPoints}
                     baseline={baseline}
                     color={CHART_COLORS[i % CHART_COLORS.length]}
+                    activityType={lift.type}
                   />
                 </CardContent>
               </Card>
@@ -225,9 +240,9 @@ export default async function AthletePage({
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
-                  <TableHead>Lift</TableHead>
+                  <TableHead>Activity</TableHead>
                   <TableHead className="hidden sm:table-cell">Leaderboard</TableHead>
-                  <TableHead className="text-right">Weight</TableHead>
+                  <TableHead className="text-right">Value</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -254,7 +269,7 @@ export default async function AthletePage({
                       </Link>
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm">
-                      {entry.weightLbs} lbs
+                      {formatValue(entry.weightLbs, entry.lift.type)}
                     </TableCell>
                   </TableRow>
                 ))}

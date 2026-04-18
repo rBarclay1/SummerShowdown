@@ -82,7 +82,7 @@ export default function MobileMenu({ admin }: { admin: boolean }) {
                 onClick={() => setOpen(false)}
                 className={cn(buttonVariants({ variant: "outline" }), "justify-start h-11")}
               >
-                Manage Lifts
+                Manage Activities
               </Link>
               <form action={adminLogout} className="w-full">
                 <button

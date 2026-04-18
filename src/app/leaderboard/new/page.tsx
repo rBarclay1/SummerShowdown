@@ -18,7 +18,7 @@ export default async function NewLeaderboardPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">Create Leaderboard</h1>
         <p className="text-muted-foreground mt-1">
-          Choose a lift to track. The leaderboard will be named after it automatically.
+          Choose an activity to track. The leaderboard will be named after it automatically.
         </p>
       </div>
       <CreateLeaderboardForm availableLifts={lifts} takenLiftIds={[...takenLiftIds]} />

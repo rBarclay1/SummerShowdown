@@ -24,6 +24,8 @@ model Athlete {
 model Lift {
   id           Int           @id @default(autoincrement())
   name         String        @unique
+  type         String        @default("lift")
+  unit         String        @default("lbs")
   isTotalLoad  Boolean       @default(false)
   entries      PREntry[]
   leaderboards Leaderboard[] @relation("BoardLift")

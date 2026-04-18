@@ -101,10 +101,19 @@ export default async function LeaderboardPage({
       </div>
 
       {isClosed && lb.endDate ? (
-        <PodiumView rankings={lb.rankings} liftName={lb.mainLift.name} endDate={lb.endDate} />
+        <PodiumView
+          rankings={lb.rankings}
+          activityName={lb.mainLift.name}
+          activityType={lb.mainLift.type}
+          endDate={lb.endDate}
+        />
       ) : (
         <>
-          <RankingTable rankings={lb.rankings} liftName={lb.mainLift.name} />
+          <RankingTable
+            rankings={lb.rankings}
+            activityName={lb.mainLift.name}
+            activityType={lb.mainLift.type}
+          />
           {lb.rankings.length > 0 && (
             <p className="text-xs text-muted-foreground mt-3">
               % gain measured from each athlete&apos;s personal baseline.
@@ -118,7 +127,7 @@ export default async function LeaderboardPage({
         <div className="mt-8">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Progress Over Time — {lb.mainLift.name}</CardTitle>
+              <CardTitle className="text-base">Progress Over Time — {lb.mainLift.name} (% gain)</CardTitle>
             </CardHeader>
             <CardContent>
               <LeaderboardProgressChart

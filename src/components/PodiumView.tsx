@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { formatGain, type AthleteRanking } from "@/lib/rankings"
+import { formatGain, formatValue, type AthleteRanking } from "@/lib/rankings"
 
 const MEDALS = ["🥇", "🥈", "🥉"]
 const PODIUM_BG = [
@@ -18,11 +18,13 @@ const PODIUM_BG = [
 
 export default function PodiumView({
   rankings,
-  liftName,
+  activityName,
+  activityType,
   endDate,
 }: {
   rankings: AthleteRanking[]
-  liftName: string
+  activityName: string
+  activityType: string
   endDate: Date
 }) {
   const top3 = rankings.slice(0, 3)
@@ -71,8 +73,13 @@ export default function PodiumView({
               }`}
             >
               {formatGain(r.percentGain)}
+              {activityType === "time_trial" && (
+                <span className="ml-1 text-sm font-normal text-muted-foreground">
+                  ({formatValue(r.current, activityType)})
+                </span>
+              )}
             </p>
-            <p className="text-xs text-muted-foreground">{liftName} gain</p>
+            <p className="text-xs text-muted-foreground">{activityName} gain</p>
           </div>
         ))}
       </div>
@@ -91,7 +98,7 @@ export default function PodiumView({
                   <TableHead>Athlete</TableHead>
                   <TableHead className="text-right">Baseline</TableHead>
                   <TableHead className="text-right">Current</TableHead>
-                  <TableHead className="text-right">{liftName} Gain</TableHead>
+                  <TableHead className="text-right">{activityName} Gain</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -107,10 +114,10 @@ export default function PodiumView({
                       {r.onFire && <span className="ml-1">🔥</span>}
                     </TableCell>
                     <TableCell className="text-right text-sm text-muted-foreground font-mono">
-                      {r.baseline} lbs
+                      {formatValue(r.baseline, activityType)}
                     </TableCell>
                     <TableCell className="text-right text-sm font-mono">
-                      {r.current} lbs
+                      {formatValue(r.current, activityType)}
                     </TableCell>
                     <TableCell className="text-right">
                       <span
@@ -119,6 +126,11 @@ export default function PodiumView({
                         }`}
                       >
                         {formatGain(r.percentGain)}
+                        {activityType === "time_trial" && (
+                          <span className="ml-1 text-xs font-normal text-muted-foreground">
+                            ({formatValue(r.current, activityType)})
+                          </span>
+                        )}
                       </span>
                     </TableCell>
                   </TableRow>

@@ -7,27 +7,35 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { formatGain, type AthleteRanking } from "@/lib/rankings"
+import { formatGain, formatValue, type AthleteRanking } from "@/lib/rankings"
 
-function GainCell({ gain }: { gain: number }) {
+function GainCell({ gain, current, activityType }: { gain: number; current: number; activityType: string }) {
   const positive = gain >= 0
+  const gainText = formatGain(gain)
+  const rawText = activityType === "time_trial" ? formatValue(current, activityType) : null
+
   return (
     <span
       className={`font-mono font-semibold text-base ${
         positive ? "text-emerald-600" : "text-red-500"
       }`}
     >
-      {formatGain(gain)}
+      {gainText}
+      {rawText && (
+        <span className="ml-1 text-sm font-normal text-muted-foreground">({rawText})</span>
+      )}
     </span>
   )
 }
 
 export default function RankingTable({
   rankings,
-  liftName,
+  activityName,
+  activityType,
 }: {
   rankings: AthleteRanking[]
-  liftName: string
+  activityName: string
+  activityType: string
 }) {
   if (rankings.length === 0) {
     return (
@@ -46,7 +54,7 @@ export default function RankingTable({
             <TableHead>Athlete</TableHead>
             <TableHead className="text-right">Baseline</TableHead>
             <TableHead className="text-right">Current</TableHead>
-            <TableHead className="text-right">{liftName} Gain</TableHead>
+            <TableHead className="text-right">{activityName} Gain</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -66,13 +74,13 @@ export default function RankingTable({
                 )}
               </TableCell>
               <TableCell className="text-right text-sm text-muted-foreground font-mono">
-                {r.baseline} lbs
+                {formatValue(r.baseline, activityType)}
               </TableCell>
               <TableCell className="text-right text-sm font-mono">
-                {r.current} lbs
+                {formatValue(r.current, activityType)}
               </TableCell>
               <TableCell className="text-right">
-                <GainCell gain={r.percentGain} />
+                <GainCell gain={r.percentGain} current={r.current} activityType={activityType} />
               </TableCell>
             </TableRow>
           ))}
