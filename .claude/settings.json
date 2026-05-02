@@ -12,7 +12,8 @@
       "Bash(env)",
       "Bash(npx tsx *)",
       "Bash(sqlite3 dev.db \"SELECT id, name, clerkId FROM Athlete ORDER BY name;\")",
-      "Bash(sqlite3 prisma/dev.db \"SELECT id, name, clerkId FROM Athlete ORDER BY name;\")"
+      "Bash(sqlite3 prisma/dev.db \"SELECT id, name, clerkId FROM Athlete ORDER BY name;\")",
+      "Bash(node -p \"require\\('./node_modules/next/package.json'\\).version\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\barcl\\OneDrive\\Documents\\summerShowdown\\SummerShowdown\\prisma\\migrations\\20260416_add_lift_is_total_load",

@@ -148,7 +148,7 @@ export async function logPR(formData: FormData): Promise<LogPRResult> {
 
     // Invalidate cached ranking data (unstable_cache) so homepage and charts
     // reflect the new entry on the next request.
-    revalidateTag("leaderboard-data")
+    revalidateTag("leaderboard-data", "default")
     revalidatePath("/")
     revalidatePath(`/leaderboard/${leaderboardId}`)
     revalidatePath(`/athlete/${athlete.id}`)
