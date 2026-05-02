@@ -2,12 +2,11 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Trophy, Users, Bell, BarChart2, Plus } from "lucide-react"
+import { Trophy, Bell, BarChart2, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const LEFT_TABS = [
   { href: "/", label: "Leaderboards", icon: Trophy },
-  { href: "/community", label: "Community", icon: Users },
 ]
 
 const RIGHT_TABS = [

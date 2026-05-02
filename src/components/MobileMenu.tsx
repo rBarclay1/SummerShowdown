@@ -47,14 +47,7 @@ export default function MobileMenu({ admin }: { admin: boolean }) {
           >
             Leaderboards
           </Link>
-          <Link
-            href="/community"
-            onClick={() => setOpen(false)}
-            className={cn(buttonVariants({ variant: "ghost" }), "justify-start h-11")}
-          >
-            Community
-          </Link>
-          <Link
+<Link
             href="/log"
             onClick={() => setOpen(false)}
             className={cn(buttonVariants({ variant: "ghost" }), "justify-start h-11")}

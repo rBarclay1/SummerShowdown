@@ -17,10 +17,7 @@ export default function Nav() {
           <Link href="/" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
             Leaderboards
           </Link>
-          <Link href="/community" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
-            Community
-          </Link>
-          <Link href="/log" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
+<Link href="/log" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
             Log PR
           </Link>
           <Link href="/notifications" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
