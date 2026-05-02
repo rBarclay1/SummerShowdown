@@ -40,6 +40,8 @@ model Leaderboard {
   mainLift   Lift      @relation("BoardLift", fields: [mainLiftId], references: [id])
   entries    PREntry[]
   createdAt  DateTime  @default(now())
+
+  @@index([mainLiftId])
 }
 
 model PREntry {
@@ -53,6 +55,11 @@ model PREntry {
   lift          Lift        @relation(fields: [liftId], references: [id])
   leaderboard   Leaderboard @relation(fields: [leaderboardId], references: [id])
   createdAt     DateTime    @default(now())
+
+  @@index([athleteId])
+  @@index([liftId])
+  @@index([leaderboardId])
+  @@index([date])
 }
 
 model Post {
@@ -63,6 +70,9 @@ model Post {
   imageData String?
   comments  Comment[]
   createdAt DateTime  @default(now())
+
+  @@index([authorId])
+  @@index([createdAt])
 }
 
 model Comment {
@@ -74,6 +84,9 @@ model Comment {
   content     String
   authorToken String
   createdAt   DateTime @default(now())
+
+  @@index([postId])
+  @@index([authorId])
 }
 
 model PushSubscription {
@@ -84,6 +97,8 @@ model PushSubscription {
   p256dh    String
   auth      String
   createdAt DateTime @default(now())
+
+  @@index([athleteId])
 }
 
 model NotificationPreferences {

@@ -28,10 +28,17 @@ export type SurpassEvent = {
 }
 
 export async function sendSurpassNotifications(events: SurpassEvent[]) {
+  if (events.length === 0) return
+
+  // Fetch all notification preferences in one query instead of one per event.
+  const athleteIds = events.map((e) => e.surpassedAthleteId)
+  const allPrefs = await prisma.notificationPreferences.findMany({
+    where: { athleteId: { in: athleteIds } },
+  })
+  const prefsMap = new Map(allPrefs.map((p) => [p.athleteId, p]))
+
   for (const event of events) {
-    const prefs = await prisma.notificationPreferences.findUnique({
-      where: { athleteId: event.surpassedAthleteId },
-    })
+    const prefs = prefsMap.get(event.surpassedAthleteId)
 
     const emailEnabled = prefs?.emailEnabled ?? true
     const pushEnabled = prefs?.pushEnabled ?? true

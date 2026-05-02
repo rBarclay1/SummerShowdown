@@ -96,12 +96,16 @@ export async function deleteLift(
   // 1. Delete all PR entries for this activity (across all leaderboards)
   await prisma.pREntry.deleteMany({ where: { liftId } })
 
-  // 2. For each leaderboard that uses this activity as its main lift:
-  //    delete any remaining entries tied to that board, then the board itself
-  const boards = await prisma.leaderboard.findMany({ where: { mainLiftId: liftId } })
-  for (const board of boards) {
-    await prisma.pREntry.deleteMany({ where: { leaderboardId: board.id } })
-    await prisma.leaderboard.delete({ where: { id: board.id } })
+  // 2. Delete any remaining entries and the leaderboards for this activity.
+  //    Using deleteMany with `in` avoids a per-board loop (was 2N queries → 2).
+  const boards = await prisma.leaderboard.findMany({
+    where: { mainLiftId: liftId },
+    select: { id: true },
+  })
+  const boardIds = boards.map((b) => b.id)
+  if (boardIds.length > 0) {
+    await prisma.pREntry.deleteMany({ where: { leaderboardId: { in: boardIds } } })
+    await prisma.leaderboard.deleteMany({ where: { id: { in: boardIds } } })
   }
 
   // 3. Delete the activity

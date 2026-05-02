@@ -7,7 +7,7 @@ import RankingTable from "@/components/RankingTable"
 import PodiumView from "@/components/PodiumView"
 import LeaderboardProgressChart from "@/components/LeaderboardProgressChart"
 import LeaderboardAdminControls from "@/components/LeaderboardAdminControls"
-import { getLeaderboardRankings, daysRemaining, buildLeaderboardProgressData } from "@/lib/rankings"
+import { computeRankings, daysRemaining, buildLeaderboardProgressData } from "@/lib/rankings"
 import { isAdmin } from "@/lib/admin"
 import { prisma } from "@/lib/prisma"
 
@@ -22,8 +22,13 @@ export default async function LeaderboardPage({
   const leaderboardId = parseInt(id)
   if (isNaN(leaderboardId)) notFound()
 
-  const [lb, rawEntries, admin, allLifts, existingBoards] = await Promise.all([
-    getLeaderboardRankings(leaderboardId),
+  // Fetch leaderboard metadata and entries in parallel — entries are used for
+  // both computeRankings and buildLeaderboardProgressData, so we fetch once.
+  const [leaderboardData, rawEntries, admin, allLifts, existingBoards] = await Promise.all([
+    prisma.leaderboard.findUnique({
+      where: { id: leaderboardId },
+      include: { mainLift: true },
+    }),
     prisma.pREntry.findMany({
       where: { leaderboardId },
       include: { athlete: true, lift: true },
@@ -33,7 +38,8 @@ export default async function LeaderboardPage({
     prisma.lift.findMany({ orderBy: { name: "asc" } }),
     prisma.leaderboard.findMany({ select: { mainLiftId: true, id: true } }),
   ])
-  if (!lb) notFound()
+  if (!leaderboardData) notFound()
+  const lb = computeRankings(leaderboardData, rawEntries)
 
   const days = daysRemaining(lb.endDate)
   const isClosed = days !== null && days <= 0

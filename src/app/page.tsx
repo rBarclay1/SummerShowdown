@@ -2,10 +2,10 @@ import Link from "next/link"
 import LeaderboardCard from "@/components/LeaderboardCard"
 import AdminNewLeaderboardButton from "@/components/AdminNewLeaderboardButton"
 import {
-  getAllLeaderboardRankings,
-  getOverallRankings,
-  getWeeklyWinner,
-  getMostImprovedThisMonth,
+  getCachedAllLeaderboardRankings,
+  getCachedOverallRankings,
+  getCachedWeeklyWinner,
+  getCachedMostImprovedThisMonth,
   formatGain,
 } from "@/lib/rankings"
 import { auth } from "@clerk/nextjs/server"
@@ -15,10 +15,10 @@ export default async function HomePage() {
   const { userId } = await auth()
 
   const [leaderboards, overall, weeklyWinner, mostImproved, myAthlete] = await Promise.all([
-    getAllLeaderboardRankings(),
-    getOverallRankings(),
-    getWeeklyWinner(),
-    getMostImprovedThisMonth(),
+    getCachedAllLeaderboardRankings(),
+    getCachedOverallRankings(),
+    getCachedWeeklyWinner(),
+    getCachedMostImprovedThisMonth(),
     userId
       ? prisma.athlete.findUnique({ where: { clerkId: userId }, select: { id: true } })
       : Promise.resolve(null),

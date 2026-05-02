@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 import { computeRankings } from "@/lib/rankings"
 import { sendSurpassNotifications, type SurpassEvent } from "@/lib/notifications"
 import { auth, currentUser } from "@clerk/nextjs/server"
@@ -146,6 +146,9 @@ export async function logPR(formData: FormData): Promise<LogPRResult> {
       }
     }
 
+    // Invalidate cached ranking data (unstable_cache) so homepage and charts
+    // reflect the new entry on the next request.
+    revalidateTag("leaderboard-data")
     revalidatePath("/")
     revalidatePath(`/leaderboard/${leaderboardId}`)
     revalidatePath(`/athlete/${athlete.id}`)

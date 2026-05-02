@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache"
 import { prisma } from "./prisma"
 export { formatTime, formatValue, formatGain } from "./format"
 
@@ -134,13 +135,19 @@ export async function getLeaderboardRankings(
 }
 
 export async function getAllLeaderboardRankings(): Promise<LeaderboardWithRankings[]> {
+  // Single query fetches all leaderboards + their entries in one round-trip,
+  // replacing the previous 1 + 2N pattern (one query per leaderboard).
   const leaderboards = await prisma.leaderboard.findMany({
-    include: { mainLift: true },
+    include: {
+      mainLift: true,
+      entries: {
+        include: { athlete: true, lift: true },
+        orderBy: { date: "asc" },
+      },
+    },
     orderBy: { createdAt: "asc" },
   })
-
-  const results = await Promise.all(leaderboards.map((lb) => getLeaderboardRankings(lb.id)))
-  return results.filter(Boolean) as LeaderboardWithRankings[]
+  return leaderboards.map((lb) => computeRankings(lb, lb.entries))
 }
 
 export async function getOverallRankings(): Promise<OverallAthleteRanking[]> {
@@ -341,6 +348,35 @@ export function buildLeaderboardProgressData(
     athleteNames: Array.from(athleteNameMap.values()),
   }
 }
+
+// ── Cached wrappers ───────────────────────────────────────────────────────────
+// unstable_cache stores the result server-side for `revalidate` seconds.
+// All four functions share the "leaderboard-data" tag so logPR can invalidate
+// them all with a single revalidateTag("leaderboard-data") call.
+
+export const getCachedAllLeaderboardRankings = unstable_cache(
+  getAllLeaderboardRankings,
+  ["all-leaderboard-rankings"],
+  { revalidate: 60, tags: ["leaderboard-data"] }
+)
+
+export const getCachedOverallRankings = unstable_cache(
+  getOverallRankings,
+  ["overall-rankings"],
+  { revalidate: 60, tags: ["leaderboard-data"] }
+)
+
+export const getCachedWeeklyWinner = unstable_cache(
+  getWeeklyWinner,
+  ["weekly-winner"],
+  { revalidate: 60, tags: ["leaderboard-data"] }
+)
+
+export const getCachedMostImprovedThisMonth = unstable_cache(
+  getMostImprovedThisMonth,
+  ["most-improved-month"],
+  { revalidate: 60, tags: ["leaderboard-data"] }
+)
 
 /** Returns positive days remaining, 0 if today, negative if past. */
 export function daysRemaining(endDate: Date | null): number | null {

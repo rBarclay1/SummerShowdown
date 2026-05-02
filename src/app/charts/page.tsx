@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { prisma } from "@/lib/prisma"
-import { buildLeaderboardProgressData, computeRankings, formatGain, getOverallRankings } from "@/lib/rankings"
+import { buildLeaderboardProgressData, computeRankings, formatGain, getCachedOverallRankings } from "@/lib/rankings"
 import LeaderboardProgressChart from "@/components/LeaderboardProgressChart"
 import LiftProgressChart from "@/components/LiftProgressChart"
 import OverallLeaderChart from "@/components/OverallLeaderChart"
@@ -16,7 +16,7 @@ export default async function ChartsPage({
   const { lift: liftParam, athlete: athleteParam } = await searchParams
 
   // ── Overall rankings ─────────────────────────────────────────────────────────
-  const overallRankings = await getOverallRankings()
+  const overallRankings = await getCachedOverallRankings()
   const overallChartData = overallRankings.map((r) => ({
     name: r.athlete.name,
     score: parseFloat(r.overallScore.toFixed(1)),
@@ -103,6 +103,8 @@ export default async function ChartsPage({
   }))
 
   // ── Rank on leaderboard that uses this lift ──────────────────────────────────
+  // entries (fetched above by liftId) already contains all entries for this lift.
+  // Filter to a specific leaderboard instead of re-querying the database.
   let rank: number | null = null
   if (selectedAthlete) {
     const leaderboard = await prisma.leaderboard.findFirst({
@@ -110,11 +112,7 @@ export default async function ChartsPage({
       include: { mainLift: true },
     })
     if (leaderboard) {
-      const lbEntries = await prisma.pREntry.findMany({
-        where: { leaderboardId: leaderboard.id },
-        include: { athlete: true, lift: true },
-        orderBy: { date: "asc" },
-      })
+      const lbEntries = entries.filter((e) => e.leaderboardId === leaderboard.id)
       const rankings = computeRankings(leaderboard, lbEntries)
       rank =
         rankings.rankings.find((r) => r.athlete.id === selectedAthlete.id)?.rank ??
