@@ -20,6 +20,9 @@ export default function AdminNavItems() {
       <Link href="/admin/screentime" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
         Screen Time
       </Link>
+      <Link href="/admin/entries" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+        Manage Entries
+      </Link>
     </>
   )
 }
