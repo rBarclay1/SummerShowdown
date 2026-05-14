@@ -6,6 +6,7 @@ export function formatTime(seconds: number): string {
 
 export function formatValue(value: number, activityType: string): string {
   if (activityType === "time_trial") return formatTime(value)
+  if (activityType === "reps") return `${Math.round(value)} reps`
   return `${value} lbs`
 }
 

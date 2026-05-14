@@ -15,8 +15,9 @@ export async function addLift(formData: FormData): Promise<LiftActionResult> {
   if (!name) return { success: false, error: "Activity name cannot be blank." }
   if (name.length > 60) return { success: false, error: "Activity name must be 60 characters or fewer." }
 
-  const type = (formData.get("type") as string) === "time_trial" ? "time_trial" : "lift"
-  const unit = type === "time_trial" ? "seconds" : "lbs"
+  const rawType = formData.get("type") as string
+  const type = rawType === "time_trial" ? "time_trial" : rawType === "reps" ? "reps" : "lift"
+  const unit = type === "time_trial" ? "seconds" : type === "reps" ? "reps" : "lbs"
 
   const allLifts = await prisma.lift.findMany({ select: { id: true, name: true } })
   const existing = allLifts.find((l) => l.name.toLowerCase() === name.toLowerCase())

@@ -54,6 +54,7 @@ export default function PRForm({
 
   const selectedLeaderboard = leaderboards.find((l) => l.id.toString() === leaderboardId)
   const isTimeTrial = selectedLeaderboard?.activityType === "time_trial"
+  const isReps = selectedLeaderboard?.activityType === "reps"
 
   useEffect(() => { setResult(null); setValue("") }, [leaderboardId])
 
@@ -73,6 +74,13 @@ export default function PRForm({
         return
       }
       fd.append("value", seconds.toString())
+    } else if (isReps) {
+      const reps = parseInt(value, 10)
+      if (isNaN(reps) || reps <= 0) {
+        setResult({ type: "error", message: "Enter a valid rep count." })
+        return
+      }
+      fd.append("value", reps.toString())
     } else {
       fd.append("value", value)
       fd.append("unit", unit)
@@ -87,6 +95,8 @@ export default function PRForm({
           const mins = Math.floor(seconds / 60)
           const secs = Math.round(seconds % 60)
           display = `${mins}:${secs.toString().padStart(2, "0")}`
+        } else if (isReps) {
+          display = `${value} reps`
         } else {
           display =
             unit === "kg"
@@ -136,7 +146,7 @@ export default function PRForm({
                   {lb.liftName}
                 </span>
                 <span className="text-xs text-muted-foreground shrink-0">
-                  {lb.activityType === "time_trial" ? "Time Trial" : "Lift"}
+                  {lb.activityType === "time_trial" ? "Time Trial" : lb.activityType === "reps" ? "Reps" : "Lift"}
                 </span>
               </button>
             )
@@ -159,6 +169,23 @@ export default function PRForm({
           />
           <p className="text-xs text-muted-foreground">
             Enter your mile time as minutes:seconds. Faster = better.
+          </p>
+        </div>
+      ) : isReps ? (
+        <div className="space-y-2">
+          <Label htmlFor="value">Reps</Label>
+          <Input
+            id="value"
+            type="number"
+            min="1"
+            step="1"
+            placeholder="e.g. 15"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            disabled={isPending}
+          />
+          <p className="text-xs text-muted-foreground">
+            Enter your rep count. Higher = better.
           </p>
         </div>
       ) : (

@@ -18,6 +18,7 @@ model Athlete {
   comments          Comment[]
   pushSubscriptions PushSubscription[]
   notificationPrefs NotificationPreferences?
+  screenTimeEntries ScreenTimeEntry[]
   createdAt         DateTime                 @default(now())
 }
 
@@ -109,4 +110,16 @@ model NotificationPreferences {
   pushEnabled  Boolean  @default(true)
   email        String?
   createdAt    DateTime @default(now())
+}
+
+model ScreenTimeEntry {
+  id        Int      @id @default(autoincrement())
+  athleteId Int
+  athlete   Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  weekStart DateTime
+  hours     Float
+  createdAt DateTime @default(now())
+
+  @@unique([athleteId, weekStart])
+  @@index([athleteId])
 }

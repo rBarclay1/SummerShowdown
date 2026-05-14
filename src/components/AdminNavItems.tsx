@@ -13,8 +13,13 @@ export default function AdminNavItems() {
   if (!isLoaded || !isAdmin) return null
 
   return (
-    <Link href="/admin/lifts" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-      Manage Activities
-    </Link>
+    <>
+      <Link href="/admin/lifts" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+        Manage Activities
+      </Link>
+      <Link href="/admin/screentime" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+        Screen Time
+      </Link>
+    </>
   )
 }

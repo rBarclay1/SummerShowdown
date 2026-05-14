@@ -23,7 +23,7 @@ export default function LiftManagerClient({ lifts: initial }: { lifts: ActivityW
 
   // ── Add form ──────────────────────────────────────────────────
   const [addName, setAddName] = useState("")
-  const [addType, setAddType] = useState<"lift" | "time_trial">("lift")
+  const [addType, setAddType] = useState<"lift" | "time_trial" | "reps">("lift")
   const [addError, setAddError] = useState("")
   const [isAdding, startAdd] = useTransition()
 
@@ -73,6 +73,7 @@ export default function LiftManagerClient({ lifts: initial }: { lifts: ActivityW
           {([
             { value: "lift", label: "Lift (higher is better)" },
             { value: "time_trial", label: "Time Trial (lower is better)" },
+            { value: "reps", label: "Reps (higher is better)" },
           ] as const).map(({ value, label }) => (
             <button
               key={value}
@@ -195,7 +196,7 @@ function ActivityRow({
     })
   }
 
-  const typeLabel = lift.type === "time_trial" ? "Time Trial" : "Lift"
+  const typeLabel = lift.type === "time_trial" ? "Time Trial" : lift.type === "reps" ? "Reps" : "Lift"
 
   return (
     <li className="bg-background px-4 py-3">
