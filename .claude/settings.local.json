@@ -9,7 +9,10 @@
       "Bash(npx prisma *)",
       "Bash(npm info *)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\barcl\\\\Documents\\\\SummerShowdown\" -Force)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "PowerShell([System.Environment]::GetEnvironmentVariable\\('TURSO_DATABASE_URL', 'User'\\); [System.Environment]::GetEnvironmentVariable\\('TURSO_DATABASE_URL', 'Machine'\\))",
+      "Bash(turso db *)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\barcl\\\\Documents\\\\SummerShowdown\" -Force | Select-Object Name, Length | Where-Object { $_.Name -match \"env\" })"
     ]
   }
 }

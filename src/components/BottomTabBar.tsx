@@ -2,11 +2,12 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Trophy, Bell, BarChart2, Plus } from "lucide-react"
+import { Trophy, Bell, BarChart2, Plus, Monitor } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const LEFT_TABS = [
   { href: "/", label: "Leaderboards", icon: Trophy },
+  { href: "/screentime", label: "Screen Time", icon: Monitor },
 ]
 
 const RIGHT_TABS = [
@@ -27,19 +28,19 @@ export default function BottomTabBar() {
       <Link
         href="/log"
         aria-label="Log PR"
-        className="absolute bottom-9 left-1/2 -translate-x-1/2 flex items-center justify-center w-14 h-14 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/40 active:scale-95 transition-transform z-10"
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center justify-center w-14 h-14 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/40 active:scale-95 transition-transform z-10"
       >
         <Plus className="size-6 text-white" strokeWidth={2.5} />
       </Link>
 
       {/* Tab bar */}
-      <div className="bg-[rgba(10,15,30,0.80)] backdrop-blur-md border-t border-white/10 flex h-16">
+      <div className="bg-[rgba(10,15,30,0.85)] backdrop-blur-md border-t border-white/10 flex h-[4.5rem]">
         {LEFT_TABS.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
             href={href}
             className={cn(
-              "flex-1 flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors",
+              "flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors",
               isActive(href) ? "text-primary" : "text-muted-foreground"
             )}
           >
@@ -58,7 +59,7 @@ export default function BottomTabBar() {
             key={href}
             href={href}
             className={cn(
-              "flex-1 flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors",
+              "flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors",
               isActive(href) ? "text-primary" : "text-muted-foreground"
             )}
           >

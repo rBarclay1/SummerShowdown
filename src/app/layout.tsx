@@ -23,7 +23,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <ClerkProvider afterSignOutUrl="/login">
       <html lang="en" className={cn("dark font-sans", geist.variable)}>
-        <body className="min-h-screen bg-background pb-16 sm:pb-0">
+        <body className="min-h-screen bg-background pb-[4.5rem] sm:pb-0">
           <AdminProvider isUserView={isUserView}>
             <Nav />
             <ServiceWorkerRegistrar />
