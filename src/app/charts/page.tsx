@@ -38,25 +38,18 @@ export default async function ChartsPage({
     onFire: r.onFire,
   }))
 
-  // ── Lifts that have at least one entry ─────────────────────────────────────
+  // ── All lifts ──────────────────────────────────────────────────────────────
   const liftsWithEntries = await prisma.lift.findMany({
-    where: { entries: { some: {} } },
     orderBy: { name: "asc" },
   })
 
   if (liftsWithEntries.length === 0) {
     return (
       <main className="max-w-4xl mx-auto px-4 py-12 text-center">
-        <p className="text-lg font-semibold mb-2">No data yet</p>
+        <p className="text-lg font-semibold mb-2">No activities yet</p>
         <p className="text-muted-foreground text-sm mb-6">
-          Log some PRs to start seeing charts.
+          Create a leaderboard to get started.
         </p>
-        <Link
-          href="/log"
-          className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-5 py-2.5 text-sm font-medium"
-        >
-          Log a PR
-        </Link>
       </main>
     )
   }
