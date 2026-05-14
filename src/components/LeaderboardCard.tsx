@@ -5,93 +5,72 @@ import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { formatGain, daysRemaining, type LeaderboardWithRankings } from "@/lib/rankings"
 
-function GainBadge({ gain }: { gain: number }) {
-  return (
-    <span
-      className={`font-mono text-[15px] sm:text-sm font-semibold ${
-        gain >= 0 ? "text-emerald-600" : "text-red-500"
-      }`}
-    >
-      {formatGain(gain)}
-    </span>
-  )
-}
-
 export default function LeaderboardCard({ lb }: { lb: LeaderboardWithRankings }) {
-  const top5 = lb.rankings.slice(0, 5)
+  const leader = lb.rankings[0] ?? null
   const days = daysRemaining(lb.endDate)
   const isClosed = days !== null && days <= 0
 
   return (
     <Card className={cn("flex flex-col", isClosed && "opacity-75")}>
-      <CardHeader className="pb-3 px-5 sm:px-6">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base leading-snug">{lb.mainLift.name}</CardTitle>
-          <div className="flex items-center gap-1 shrink-0">
+      <CardHeader className="pb-2 px-3 pt-3 sm:px-4 sm:pt-4">
+        <div className="flex items-start justify-between gap-1">
+          <CardTitle className="text-sm leading-snug">{lb.mainLift.name}</CardTitle>
+          <div className="shrink-0">
             {isClosed ? (
-              <Badge variant="outline" className="text-xs border-muted-foreground/40 text-muted-foreground">
+              <Badge variant="outline" className="text-[10px] border-muted-foreground/40 text-muted-foreground px-1 py-0">
                 Closed
               </Badge>
             ) : days !== null && days <= 7 ? (
-              <Badge variant="outline" className="text-xs border-orange-400 text-orange-600">
-                {days === 0 ? "Ends today" : `${days}d left`}
+              <Badge variant="outline" className="text-[10px] border-orange-400 text-orange-600 px-1 py-0">
+                {days === 0 ? "Today" : `${days}d`}
               </Badge>
             ) : days !== null ? (
-              <Badge variant="outline" className="text-xs text-muted-foreground">
-                {days}d left
+              <Badge variant="outline" className="text-[10px] text-muted-foreground px-1 py-0">
+                {days}d
               </Badge>
             ) : null}
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">
-          {lb.rankings.length} athlete{lb.rankings.length !== 1 ? "s" : ""} competing
+        <p className="text-[11px] text-muted-foreground">
+          {lb.rankings.length} competing
         </p>
       </CardHeader>
 
-      <CardContent className="flex-1 pb-4 px-5 sm:px-6">
-        {top5.length === 0 ? (
-          <p className="text-sm text-muted-foreground italic">No entries yet.</p>
+      <CardContent className="flex-1 pb-2 px-3 sm:px-4">
+        {!leader ? (
+          <p className="text-xs text-muted-foreground italic">No entries yet.</p>
         ) : (
-          <ol className="space-y-2">
-            {top5.map((r) => (
-              <li key={r.athlete.id} className="flex items-center gap-3">
-                <span className="text-xs text-muted-foreground w-4 text-right shrink-0">
-                  {r.rank}
-                </span>
-                <Link
-                  href={`/athlete/${r.athlete.id}`}
-                  className="flex-1 text-[15px] sm:text-sm font-medium hover:underline truncate"
-                >
-                  {r.athlete.name}
-                  {r.onFire && (
-                    <span className="ml-1 text-sm" title="On fire — new PR this week">
-                      🔥
-                    </span>
-                  )}
-                </Link>
-                <GainBadge gain={r.percentGain} />
-              </li>
-            ))}
-            {lb.rankings.length > 5 && (
-              <li className="text-xs text-muted-foreground pl-7">
-                +{lb.rankings.length - 5} more
-              </li>
-            )}
-          </ol>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-muted-foreground shrink-0">1</span>
+            <Link
+              href={`/athlete/${leader.athlete.id}`}
+              className="flex-1 text-xs font-medium hover:underline truncate"
+            >
+              {leader.athlete.name}
+              {leader.onFire && <span className="ml-0.5 text-xs">🔥</span>}
+            </Link>
+            <span
+              className={`font-mono text-xs font-semibold shrink-0 ${
+                leader.percentGain >= 0 ? "text-emerald-500" : "text-red-500"
+              }`}
+            >
+              {formatGain(leader.percentGain)}
+            </span>
+          </div>
         )}
       </CardContent>
 
-      <div className="px-5 sm:px-6 pb-4 flex gap-2">
+      <div className="px-3 sm:px-4 pb-3 flex flex-col gap-1.5">
         <Link
           href={`/leaderboard/${lb.id}`}
-          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "flex-1 justify-center")}
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full justify-center text-xs h-7")}
         >
           View Full
         </Link>
         {!isClosed && (
           <Link
             href={`/log?leaderboard=${lb.id}`}
-            className={cn(buttonVariants({ size: "sm" }), "flex-1 justify-center")}
+            className={cn(buttonVariants({ size: "sm" }), "w-full justify-center text-xs h-7")}
           >
             Log PR
           </Link>
