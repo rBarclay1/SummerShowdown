@@ -17,7 +17,13 @@ export default function Nav() {
           <Link href="/" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
             Leaderboards
           </Link>
-<Link href="/log" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
+          <Link href="/charts" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
+            Charts
+          </Link>
+          <Link href="/screentime" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
+            Screen Time
+          </Link>
+          <Link href="/log" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
             Log PR
           </Link>
           <Link href="/notifications" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
