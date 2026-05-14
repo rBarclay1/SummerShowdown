@@ -159,3 +159,67 @@ export async function logPR(formData: FormData): Promise<LogPRResult> {
     return { success: false, error: "Failed to log PR. Please try again." }
   }
 }
+
+export type LogScreenTimeResult =
+  | { success: true; hours: number; previousHours: number | null }
+  | { success: false; error: string }
+
+export async function logScreenTimeAsUser(formData: FormData): Promise<LogScreenTimeResult> {
+  try {
+    const { userId } = await auth()
+    if (!userId) return { success: false, error: "Not authenticated." }
+
+    const clerkUser = await currentUser()
+    const athleteName =
+      [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(" ").trim() ||
+      clerkUser?.username ||
+      ""
+    if (!athleteName) return { success: false, error: "Your profile needs a name set in Clerk." }
+
+    const weekStart = formData.get("weekStart") as string
+    const hoursStr = formData.get("hours") as string
+
+    if (!weekStart) return { success: false, error: "Week is required." }
+
+    const hours = parseFloat(hoursStr)
+    if (isNaN(hours) || hours <= 0) return { success: false, error: "Enter a valid number of hours." }
+    if (hours > 168) return { success: false, error: "Screen time cannot exceed 168 hours (one week)." }
+
+    const weekDate = new Date(weekStart)
+    if (isNaN(weekDate.getTime())) return { success: false, error: "Invalid week date." }
+
+    let athlete = await prisma.athlete.findUnique({ where: { clerkId: userId } })
+    if (!athlete) {
+      const existing = await prisma.athlete.findUnique({ where: { name: athleteName } })
+      if (existing && !existing.clerkId) {
+        athlete = await prisma.athlete.update({ where: { id: existing.id }, data: { clerkId: userId } })
+      } else if (!existing) {
+        athlete = await prisma.athlete.create({ data: { name: athleteName, clerkId: userId } })
+      } else {
+        athlete = await prisma.athlete.create({ data: { name: `${athleteName} (${userId.slice(-4)})`, clerkId: userId } })
+      }
+    }
+
+    const prevEntry = await prisma.screenTimeEntry.findFirst({
+      where: { athleteId: athlete.id, weekStart: { lt: weekDate } },
+      orderBy: { weekStart: "desc" },
+    })
+
+    const existing = await prisma.screenTimeEntry.findFirst({
+      where: { athleteId: athlete.id, weekStart: weekDate },
+    })
+
+    if (existing) {
+      await prisma.screenTimeEntry.update({ where: { id: existing.id }, data: { hours } })
+    } else {
+      await prisma.screenTimeEntry.create({ data: { athleteId: athlete.id, weekStart: weekDate, hours } })
+    }
+
+    revalidatePath("/screentime")
+
+    return { success: true, hours, previousHours: prevEntry?.hours ?? null }
+  } catch (e) {
+    console.error(e)
+    return { success: false, error: "Failed to log screen time. Please try again." }
+  }
+}
