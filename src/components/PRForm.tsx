@@ -26,6 +26,12 @@ function parseTimeToSeconds(input: string): number | null {
     if (isNaN(mins) || isNaN(secs) || secs >= 60) return null
     return mins * 60 + secs
   }
+  if (/^\d{3,}$/.test(trimmed)) {
+    const mins = parseInt(trimmed.slice(0, -2), 10)
+    const secs = parseInt(trimmed.slice(-2), 10)
+    if (secs >= 60) return null
+    return mins * 60 + secs
+  }
   const secs = parseFloat(trimmed)
   return isNaN(secs) ? null : secs
 }
