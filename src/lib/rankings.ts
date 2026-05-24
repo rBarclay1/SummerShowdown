@@ -379,9 +379,9 @@ export const getCachedMostImprovedThisMonth = unstable_cache(
 )
 
 /** Returns positive days remaining, 0 if today, negative if past. */
-export function daysRemaining(endDate: Date | null): number | null {
+export function daysRemaining(endDate: Date | string | null): number | null {
   if (!endDate) return null
-  return Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  return Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
 }
 
 export async function getMostImprovedThisMonth(): Promise<MonthlyImprovedRanking[]> {
