@@ -23,7 +23,10 @@ export default function BottomTabBar() {
   }
 
   return (
-    <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-20">
+    <nav
+      className="sm:hidden fixed bottom-0 left-0 right-0 z-50"
+      style={{ transform: "translateZ(0)", WebkitTransform: "translateZ(0)" }}
+    >
       {/* FAB — elevated above the tab bar */}
       <Link
         href="/log"
@@ -34,7 +37,7 @@ export default function BottomTabBar() {
       </Link>
 
       {/* Tab bar */}
-      <div className="bg-[rgba(10,15,30,0.85)] backdrop-blur-md border-t border-white/10 flex h-[4.5rem]">
+      <div className="bg-[rgba(10,15,30,0.95)] backdrop-blur-md border-t border-white/10 flex h-[4.5rem]">
         {LEFT_TABS.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
