@@ -123,9 +123,13 @@
   --background: transparent;
 }
 
-/* Full-page gradient pinned to the viewport */
+/* Full-page gradient pinned to the viewport. The solid background-color is the
+   real fix for the iOS Safari black bar: when the dynamic toolbar collapses,
+   the fixed gradient image doesn't repaint the newly-revealed strip, so the
+   element's own color backs it instead of the black browser canvas. */
 html {
   background: linear-gradient(135deg, #0A0F1E 0%, #0F0F0F 100%);
+  background-color: #0F0F0F;
   background-attachment: fixed;
   min-height: 100dvh;
 }
@@ -152,6 +156,10 @@ html {
     }
   body {
     @apply bg-background text-foreground;
+    /* Stays transparent (--background is transparent in dark) so the html
+       gradient shows through; fill the dynamic viewport so it never comes up
+       short on iOS. */
+    min-height: 100dvh;
     }
   html {
     @apply font-sans;
